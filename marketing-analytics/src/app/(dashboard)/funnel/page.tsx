@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { subDays } from "date-fns";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { FunnelVisualization } from "@/components/dashboard/funnel-visualization";
 import { TimeSeriesChart } from "@/components/dashboard/time-series-chart";
@@ -12,115 +13,109 @@ import { FilterBar, type FilterValues } from "@/components/dashboard/filter-bar"
 import { PropertySelector } from "@/components/dashboard/property-selector";
 import { useGA4Funnel } from "@/hooks/use-ga4-funnel";
 import { toGA4DateString } from "@/lib/utils";
+import {
+  DEMO_FUNNEL_KPIS, DEMO_FUNNEL_STEPS, DEMO_FUNNEL_TIMESERIES,
+  DEMO_DONUT, DEMO_CHANNEL_ROWS,
+} from "@/lib/demo-data";
 import type { ChannelRow } from "@/types";
 
 const CHANNEL_COLUMNS: Column<ChannelRow>[] = [
-  { key: "sourceMedium", label: "Source / Medium", format: "string", sortable: false },
-  { key: "totalUsers", label: "Total Users", format: "number" },
-  { key: "newUsers", label: "New Users", format: "number" },
-  { key: "pageViews", label: "Page Views", format: "number" },
-  { key: "addsToCart", label: "Adds to Cart", format: "number" },
-  { key: "checkouts", label: "Checkouts", format: "number" },
-  { key: "paymentInfoAdds", label: "Payment Info", format: "number" },
-  { key: "purchases", label: "Purchases", format: "number" },
-  { key: "grossPurchaseRevenue", label: "Revenue", format: "currency" },
+  { key: "sourceMedium",         label: "Source / Medium",   format: "string",   sortable: false },
+  { key: "totalUsers",           label: "Total Users",        format: "number" },
+  { key: "newUsers",             label: "New Users",          format: "number" },
+  { key: "pageViews",            label: "Page Views",         format: "number" },
+  { key: "addsToCart",           label: "Adds to Cart",       format: "number" },
+  { key: "checkouts",            label: "Checkouts",          format: "number" },
+  { key: "paymentInfoAdds",      label: "Payment Info",       format: "number" },
+  { key: "purchases",            label: "Purchases",          format: "number" },
+  { key: "grossPurchaseRevenue", label: "Revenue",            format: "currency" },
 ];
 
 export default function FunnelPage() {
-  const [propertyId, setPropertyId] = useState(process.env.NEXT_PUBLIC_GA4_PROPERTY_ID ?? "");
+  const { data: session } = useSession();
+  const [propertyId, setPropertyId] = useState("");
   const [filters, setFilters] = useState<FilterValues>({
     startDate: toGA4DateString(subDays(new Date(), 29)),
     endDate: toGA4DateString(new Date()),
-    propertyId,
   });
 
-  const handleFiltersChange = (f: FilterValues) => setFilters({ ...f, propertyId });
-  const handlePropertyChange = (id: string) => {
-    setPropertyId(id);
-    setFilters((prev) => ({ ...prev, propertyId: id }));
-  };
+  const ga4 = useGA4Funnel({ ...filters, propertyId });
 
-  const { data, isLoading, isError, error, refetch } = useGA4Funnel({ ...filters, propertyId });
-  const d = data?.data;
+  // Use real GA4 data if authenticated, otherwise fall back to demo
+  const isDemo = !session || ga4.isError || !ga4.data;
+  const kpis        = ga4.data?.data.kpis        ?? DEMO_FUNNEL_KPIS;
+  const funnelSteps = ga4.data?.data.funnelSteps ?? DEMO_FUNNEL_STEPS;
+  const timeSeries  = ga4.data?.data.timeSeries  ?? DEMO_FUNNEL_TIMESERIES;
+  const donut       = ga4.data?.data.donut       ?? DEMO_DONUT;
+  const channelRows = ga4.data?.data.channelRows ?? DEMO_CHANNEL_ROWS;
+  const loading     = ga4.isLoading && !!session;
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
+    <>
+      {/* Page header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Sales Funnel by Channel</h1>
-          <p className="text-sm text-muted-foreground">
-            Page Views → Add to Cart → Checkout → Payment Info → Purchase
+          <h1 className="text-xl font-semibold tracking-tight">Sales Funnel by Channel</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {filters.startDate} — {filters.endDate}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <PropertySelector value={propertyId} onChange={handlePropertyChange} />
-          <button
-            onClick={() => refetch()}
-            className="rounded-md border p-2 text-muted-foreground hover:text-foreground"
-            title="Refresh"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-        </div>
+        {session && (
+          <div className="flex items-center gap-2">
+            <PropertySelector value={propertyId} onChange={setPropertyId} />
+            <button
+              onClick={() => ga4.refetch()}
+              className="rounded-md border p-2 text-muted-foreground hover:text-foreground transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 ${ga4.isFetching ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
       <FilterBar
         filters={filters}
-        onChange={handleFiltersChange}
+        onChange={setFilters}
         show={["campaign", "sourceMedium"]}
       />
 
-      {/* Error state */}
-      {isError && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {(error as Error)?.message ?? "Failed to load GA4 data. Check your credentials."}
-        </div>
-      )}
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <KpiCard label="Total Users" value={d?.kpis.totalUsers ?? 0} delta={d?.kpis.totalUsersDelta ?? 0} loading={isLoading} />
-        <KpiCard label="Purchases" value={d?.kpis.purchases ?? 0} delta={d?.kpis.purchasesDelta ?? 0} loading={isLoading} />
-        <KpiCard label="Total Purchasers" value={d?.kpis.totalPurchasers ?? 0} delta={d?.kpis.totalPurchasersDelta ?? 0} loading={isLoading} />
-        <KpiCard label="First-Time Purchasers" value={d?.kpis.firstTimePurchasers ?? 0} delta={d?.kpis.firstTimePurchasersDelta ?? 0} loading={isLoading} />
-        <KpiCard label="Gross Revenue" value={d?.kpis.grossPurchaseRevenue ?? 0} delta={d?.kpis.grossPurchaseRevenueDelta ?? 0} format="currency" loading={isLoading} />
+      {/* KPI Cards — 5 across */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <KpiCard label="Total Users"           value={kpis.totalUsers}           delta={kpis.totalUsersDelta}           loading={loading} />
+        <KpiCard label="Purchases"             value={kpis.purchases}             delta={kpis.purchasesDelta}             loading={loading} />
+        <KpiCard label="Total Purchasers"      value={kpis.totalPurchasers}      delta={kpis.totalPurchasersDelta}      loading={loading} />
+        <KpiCard label="First-Time Purchasers" value={kpis.firstTimePurchasers}  delta={kpis.firstTimePurchasersDelta}  loading={loading} />
+        <KpiCard label="Gross Revenue"         value={kpis.grossPurchaseRevenue} delta={kpis.grossPurchaseRevenueDelta} format="currency" loading={loading} />
       </div>
 
-      {/* Funnel */}
-      <FunnelVisualization steps={d?.funnelSteps ?? []} loading={isLoading} />
+      {/* Funnel visualization */}
+      <FunnelVisualization steps={funnelSteps} loading={loading} />
 
-      {/* Charts row */}
+      {/* Charts — time series left, donut right */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <TimeSeriesChart
-          title="Total Users over Time"
-          data={d?.timeSeries ?? []}
+          title="Dynamics by Period — Total Users"
+          data={timeSeries}
           color="#6366f1"
-          loading={isLoading}
+          loading={loading}
         />
         <DonutChart
           title="Purchases by Source / Medium"
-          data={(d?.donut ?? []).map((s, i) => ({ ...s, color: "" }))}
-          loading={isLoading}
+          data={donut}
+          loading={loading}
         />
       </div>
 
-      {/* Source/Medium table */}
+      {/* Source / Medium table */}
       <DataTable<ChannelRow>
         title="Source / Medium Performance"
         columns={CHANNEL_COLUMNS}
-        rows={d?.channelRows ?? []}
+        rows={channelRows}
         defaultSortKey="totalUsers"
-        loading={isLoading}
+        loading={loading}
       />
-
-      {data?.cached && (
-        <p className="text-right text-xs text-muted-foreground">
-          Cached · fetched {data.fetchedAt ? new Date(data.fetchedAt).toLocaleTimeString() : ""}
-        </p>
-      )}
-    </div>
+    </>
   );
 }
