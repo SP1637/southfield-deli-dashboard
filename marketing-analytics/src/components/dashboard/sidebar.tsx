@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Globe, Package, TrendingUp, LayoutDashboard, LogOut } from "lucide-react";
+import { BarChart3, Globe, Package, TrendingUp, LayoutDashboard, LogOut, Plug } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -55,6 +55,25 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Connections section */}
+        <div className="pt-4">
+          <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Settings
+          </p>
+          <Link
+            href="/connect"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/connect"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <Plug className="h-4 w-4 shrink-0" />
+            Data Sources
+          </Link>
+        </div>
       </nav>
 
       {/* User */}

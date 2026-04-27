@@ -19,10 +19,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
               Connect your GA4 account to see real data.
             </p>
             <a
-              href="/login"
+              href="/connect"
               className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700"
             >
-              Connect GA4 →
+              Connect sources →
             </a>
           </div>
         )}
