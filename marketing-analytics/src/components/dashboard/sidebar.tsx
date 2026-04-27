@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 const NAV_ITEMS = [
-  { label: "Overview",     href: "/",           icon: Home },
+  { label: "Overview",     href: "/overview",    icon: Home },
   { label: "Sales Funnel", href: "/funnel",      icon: BarChart3 },
   { label: "Attribution",  href: "/attribution", icon: Share2 },
   { label: "By Country",   href: "/countries",   icon: Globe },
@@ -40,9 +40,7 @@ export function Sidebar() {
         </p>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active = item.href === "/"
-            ? pathname === "/"
-            : pathname === item.href || pathname.startsWith(item.href + "/");
+          const active = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
