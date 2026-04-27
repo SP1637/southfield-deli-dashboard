@@ -410,7 +410,17 @@ function ModalHeader({ connector, onClose }: { connector: Connector; onClose: ()
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ConnectPage() {
+import { Suspense } from "react";
+
+export default function ConnectPageWrapper() {
+  return (
+    <Suspense>
+      <ConnectPage />
+    </Suspense>
+  );
+}
+
+function ConnectPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
