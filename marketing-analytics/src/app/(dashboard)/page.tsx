@@ -1,7 +1,11 @@
-import { redirect } from "next/navigation";
+"use client";
 
-// (dashboard)/page.tsx → redirect to the overview page
-// The real overview content lives in (dashboard)/overview/page.tsx
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+/** Redirect / → /overview inside the dashboard shell */
 export default function DashboardRoot() {
-  redirect("/overview");
+  const router = useRouter();
+  useEffect(() => { router.replace("/overview"); }, [router]);
+  return null;
 }
