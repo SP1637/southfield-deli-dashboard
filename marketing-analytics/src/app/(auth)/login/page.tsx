@@ -11,7 +11,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (session) router.replace("/connect");
+    if (session) router.replace("/");
   }, [session, router]);
 
   if (status === "loading") {
@@ -44,7 +44,7 @@ export default function LoginPage() {
             className="w-full gap-3"
             size="lg"
             onClick={() =>
-              signIn("google", { callbackUrl: "/connect" })
+              signIn("google", { callbackUrl: "/" })
             }
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>

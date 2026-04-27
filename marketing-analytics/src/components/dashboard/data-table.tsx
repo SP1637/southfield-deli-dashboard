@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { useState, useCallback } from "react";
+import { ChevronUp, ChevronDown, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCompact, formatCurrency } from "@/lib/utils";
@@ -34,6 +34,24 @@ export function DataTable<T extends object>({
   const [sortKey, setSortKey] = useState<keyof T | null>(defaultSortKey ?? null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
+
+  const exportCSV = useCallback(() => {
+    const header = columns.map((c) => c.label).join(",");
+    const rowsCSV = rows.map((row) =>
+      columns.map((c) => {
+        const v = row[c.key];
+        const s = String(v ?? "");
+        return s.includes(",") ? `"${s}"` : s;
+      }).join(",")
+    );
+    const blob = new Blob([[header, ...rowsCSV].join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title.replace(/\s+/g, "_").toLowerCase()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [rows, columns, title]);
 
   const handleSort = (key: keyof T) => {
     if (sortKey === key) {
@@ -81,7 +99,16 @@ export function DataTable<T extends object>({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export CSV
+          </button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { AIChat } from "@/components/dashboard/ai-chat";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Session is optional — unauthenticated users see demo data
@@ -30,6 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </div>
       </main>
+      <AIChat />
     </div>
   );
 }

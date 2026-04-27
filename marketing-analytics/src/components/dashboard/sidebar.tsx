@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Globe, Package, TrendingUp, LayoutDashboard, LogOut, Plug } from "lucide-react";
+import { BarChart3, Globe, Package, TrendingUp, LayoutDashboard, LogOut, Plug, Home, Share2 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 const NAV_ITEMS = [
-  { label: "Sales Funnel", href: "/funnel", icon: BarChart3 },
-  { label: "By Country", href: "/countries", icon: Globe },
-  { label: "By Item", href: "/items", icon: Package },
-  { label: "Traffic", href: "/traffic", icon: TrendingUp },
+  { label: "Overview",     href: "/",           icon: Home },
+  { label: "Sales Funnel", href: "/funnel",      icon: BarChart3 },
+  { label: "Attribution",  href: "/attribution", icon: Share2 },
+  { label: "By Country",   href: "/countries",   icon: Globe },
+  { label: "By Item",      href: "/items",       icon: Package },
+  { label: "Traffic",      href: "/traffic",     icon: TrendingUp },
 ];
 
 export function Sidebar() {
@@ -38,7 +40,9 @@ export function Sidebar() {
         </p>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const active = item.href === "/"
+            ? pathname === "/"
+            : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
