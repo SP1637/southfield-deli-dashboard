@@ -10,22 +10,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
-import { GoogleAuth } from "google-auth-library";
 import { buildCacheKey, getCached, setCache } from "@/lib/ga4/client";
+import { buildGA4Client } from "@/lib/ga4/service-account";
 import { transformCountryRows, transformTimeSeries } from "@/lib/ga4/transformers";
-
-function buildClient(accessToken: string) {
-  const authClient = new GoogleAuth().fromAPIKey("") as any;
-  authClient.credentials = { access_token: accessToken };
-  return new BetaAnalyticsDataClient({ authClient });
-}
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const accessToken = (session as any).accessToken as string | undefined;
-  if (!accessToken) return NextResponse.json({ error: "No access token" }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
   const propertyId = searchParams.get("propertyId") ?? process.env.GA4_PROPERTY_ID;
@@ -40,7 +31,7 @@ export async function GET(req: NextRequest) {
   if (cached) return NextResponse.json({ data: cached, cached: true, fetchedAt: new Date().toISOString() });
 
   const property = `properties/${propertyId}`;
-  const client = buildClient(accessToken);
+  const client = buildGA4Client();
 
   const countryFilter = country
     ? { filter: { fieldName: "country", stringFilter: { matchType: "EXACT" as const, value: country } } }

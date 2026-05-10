@@ -7,8 +7,32 @@ import Script from "next/script";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GA4 Funnel Dashboard",
-  description: "Production-ready Google Analytics 4 sales funnel analytics dashboard",
+  title: {
+    default: "Marketing Intelligence — Marketing Analytics",
+    template: "%s · Marketing Intelligence",
+  },
+  description:
+    "Connect 18+ marketing sources, get AI-written reports, set KPI alerts and share live dashboards. Built for marketing teams, agencies and e-commerce.",
+  keywords: [
+    "marketing analytics", "GA4 dashboard", "KPI tracking", "ROAS",
+    "sales funnel", "attribution", "AI reports", "marketing agency",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "Marketing Intelligence",
+    title: "Marketing Intelligence — Marketing Analytics",
+    description:
+      "Connect 18+ marketing sources. AI-written reports. KPI alerts. Built for agencies & e-commerce teams.",
+    url: "https://marketing-analytics-self.vercel.app",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Marketing Intelligence — Marketing Analytics",
+    description: "Connect 18+ marketing sources. AI reports. KPI alerts. Built for agencies & e-commerce teams.",
+  },
+  metadataBase: new URL(
+    process.env.NEXTAUTH_URL ?? "https://marketing-analytics-self.vercel.app"
+  ),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +41,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Privacy policy link — required for Google OAuth branding verification */}
+        <link rel="privacy-policy" href="https://marketing-analytics-self.vercel.app/privacy" />
         {/* Google Tag Manager — loads asynchronously, won't block render */}
         {gtmId && (
           <Script id="gtm-head" strategy="afterInteractive">

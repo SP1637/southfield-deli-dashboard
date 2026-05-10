@@ -9,16 +9,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
-import { GoogleAuth } from "google-auth-library";
 import { buildCacheKey, getCached, setCache } from "@/lib/ga4/client";
+import { buildGA4Client } from "@/lib/ga4/service-account";
 import { transformChannelRows, transformTimeSeries } from "@/lib/ga4/transformers";
-
-function buildClient(accessToken: string): BetaAnalyticsDataClient {
-  const authClient = new GoogleAuth().fromAPIKey("") as any;
-  authClient.credentials = { access_token: accessToken };
-  return new BetaAnalyticsDataClient({ authClient });
-}
 
 /** Build a GA4 dimensionFilter for a single event name */
 function eventFilter(eventName: string) {
@@ -34,9 +27,6 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const accessToken = (session as any).accessToken as string | undefined;
-  if (!accessToken) return NextResponse.json({ error: "No access token" }, { status: 401 });
-
   const { searchParams } = req.nextUrl;
   const propertyId = searchParams.get("propertyId") ?? process.env.GA4_PROPERTY_ID;
   const startDate = searchParams.get("startDate") ?? "30daysAgo";
@@ -51,7 +41,7 @@ export async function GET(req: NextRequest) {
   if (cached) return NextResponse.json({ data: cached, cached: true, fetchedAt: new Date().toISOString() });
 
   const property = `properties/${propertyId}`;
-  const client = buildClient(accessToken);
+  const client = buildGA4Client();
   const dateRanges = [{ startDate, endDate }];
 
   // Build optional session-level filters
@@ -130,7 +120,7 @@ export async function GET(req: NextRequest) {
         property,
         dateRanges,
         dimensions: [{ name: "date" }],
-        metrics: [{ name: "totalUsers" }],
+        metrics: [{ name: "totalUsers" }, { name: "purchaseRevenue" }],
         orderBys: [{ dimension: { dimensionName: "date" } }],
         ...(sessionFilter ? { dimensionFilter: sessionFilter } : {}),
       } as any),
@@ -145,7 +135,6 @@ export async function GET(req: NextRequest) {
           { name: "screenPageViews" },
           { name: "addToCarts" },
           { name: "checkouts" },
-          { name: "transactions" },
           { name: "transactions" },
           { name: "purchaseRevenue" },
         ],
@@ -193,7 +182,8 @@ export async function GET(req: NextRequest) {
     }));
 
     // ── Time series & channel rows ────────────────────────────────────────
-    const timeSeries = transformTimeSeries((timeSeriesRes as any)[0]?.rows ?? []);
+    // value = totalUsers, value2 = purchaseRevenue (used by overview revenue chart)
+    const timeSeries = transformTimeSeries((timeSeriesRes as any)[0]?.rows ?? [], 0, 1);
     const channelRows = transformChannelRows((channelRes as any)[0]?.rows ?? []);
 
     const donut = channelRows.slice(0, 9).map((r) => ({

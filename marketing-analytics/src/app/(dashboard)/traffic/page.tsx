@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGA4Property } from "@/hooks/use-ga4-property";
 import { subDays } from "date-fns";
 import { RefreshCw } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -16,10 +17,11 @@ import {
   DEMO_TRAFFIC_KPIS, DEMO_TRAFFIC_DAILY,
   DEMO_TRAFFIC_BY_CHANNEL, DEMO_WEEKLY, DEMO_MONTHLY,
 } from "@/lib/demo-data";
+import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 
 export default function TrafficPage() {
   const { data: session } = useSession();
-  const [propertyId, setPropertyId] = useState("");
+  const [propertyId, setPropertyId] = useGA4Property();
   const [filters, setFilters] = useState<FilterValues>({
     startDate: toGA4DateString(subDays(new Date(), 51)),
     endDate: toGA4DateString(new Date()),
@@ -46,22 +48,8 @@ export default function TrafficPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Traffic Overview</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {filters.startDate} — {filters.endDate}
-          </p>
-        </div>
-        {session && (
-          <div className="flex items-center gap-2">
-            <PropertySelector value={propertyId} onChange={setPropertyId} />
-            <button onClick={() => ga4.refetch()} className="rounded-md border p-2 text-muted-foreground hover:text-foreground">
-              <RefreshCw className={`h-4 w-4 ${ga4.isFetching ? "animate-spin" : ""}`} />
-            </button>
-          </div>
-        )}
-      </div>
+      <PageHeader title="Traffic Overview" />
+      <PageContent>
 
       <FilterBar filters={filters} onChange={setFilters} show={["channelGroup", "deviceCategory"]} />
 
@@ -128,6 +116,7 @@ export default function TrafficPage() {
           </Card>
         </div>
       </div>
+      </PageContent>
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGA4Property } from "@/hooks/use-ga4-property";
 import { subDays } from "date-fns";
 import { RefreshCw } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -17,6 +18,7 @@ import {
   DEMO_COUNTRY_TIMESERIES, DEMO_COUNTRY_ROWS,
 } from "@/lib/demo-data";
 import type { CountryRow } from "@/types";
+import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 
 const COUNTRY_COLUMNS: Column<CountryRow>[] = [
   { key: "country",              label: "Country",       format: "string",   sortable: false },
@@ -32,7 +34,7 @@ const COUNTRY_COLUMNS: Column<CountryRow>[] = [
 
 export default function CountriesPage() {
   const { data: session } = useSession();
-  const [propertyId, setPropertyId] = useState("");
+  const [propertyId, setPropertyId] = useGA4Property();
   const [filters, setFilters] = useState<FilterValues>({
     startDate: toGA4DateString(subDays(new Date(), 6)),
     endDate: toGA4DateString(new Date()),
@@ -48,22 +50,8 @@ export default function CountriesPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Sales Funnel by Country</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {filters.startDate} — {filters.endDate}
-          </p>
-        </div>
-        {session && (
-          <div className="flex items-center gap-2">
-            <PropertySelector value={propertyId} onChange={setPropertyId} />
-            <button onClick={() => ga4.refetch()} className="rounded-md border p-2 text-muted-foreground hover:text-foreground">
-              <RefreshCw className={`h-4 w-4 ${ga4.isFetching ? "animate-spin" : ""}`} />
-            </button>
-          </div>
-        )}
-      </div>
+      <PageHeader title="Sales Funnel by Country" />
+      <PageContent>
 
       <FilterBar filters={filters} onChange={setFilters} show={[]} />
 
@@ -86,6 +74,7 @@ export default function CountriesPage() {
         defaultSortKey="totalUsers"
         loading={loading}
       />
+      </PageContent>
     </>
   );
 }

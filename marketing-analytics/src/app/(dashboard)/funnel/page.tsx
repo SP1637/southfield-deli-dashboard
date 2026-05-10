@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGA4Property } from "@/hooks/use-ga4-property";
 import { subDays } from "date-fns";
 import { RefreshCw } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -18,6 +19,7 @@ import {
   DEMO_DONUT, DEMO_CHANNEL_ROWS,
 } from "@/lib/demo-data";
 import type { ChannelRow } from "@/types";
+import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 
 const CHANNEL_COLUMNS: Column<ChannelRow>[] = [
   { key: "sourceMedium",         label: "Source / Medium",   format: "string",   sortable: false },
@@ -33,7 +35,7 @@ const CHANNEL_COLUMNS: Column<ChannelRow>[] = [
 
 export default function FunnelPage() {
   const { data: session } = useSession();
-  const [propertyId, setPropertyId] = useState("");
+  const [propertyId, setPropertyId] = useGA4Property();
   const [filters, setFilters] = useState<FilterValues>({
     startDate: toGA4DateString(subDays(new Date(), 29)),
     endDate: toGA4DateString(new Date()),
@@ -52,27 +54,8 @@ export default function FunnelPage() {
 
   return (
     <>
-      {/* Page header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Sales Funnel by Channel</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {filters.startDate} — {filters.endDate}
-          </p>
-        </div>
-        {session && (
-          <div className="flex items-center gap-2">
-            <PropertySelector value={propertyId} onChange={setPropertyId} />
-            <button
-              onClick={() => ga4.refetch()}
-              className="rounded-md border p-2 text-muted-foreground hover:text-foreground transition-colors"
-              title="Refresh"
-            >
-              <RefreshCw className={`h-4 w-4 ${ga4.isFetching ? "animate-spin" : ""}`} />
-            </button>
-          </div>
-        )}
-      </div>
+      <PageHeader title="Sales Funnel by Channel" />
+      <PageContent>
 
       {/* Filters */}
       <FilterBar
@@ -116,6 +99,7 @@ export default function FunnelPage() {
         defaultSortKey="totalUsers"
         loading={loading}
       />
+      </PageContent>
     </>
   );
 }

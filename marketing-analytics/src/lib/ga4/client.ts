@@ -9,21 +9,16 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { GoogleAuth } from "google-auth-library";
 
 /**
- * Returns a GA4 Data API client that authenticates using the given access token
- * (delegated from the user's Google OAuth session).
+ * @deprecated DO NOT USE — this function is broken dead code.
+ * `auth.fromAPIKey("")` creates an API-key-based auth client; manually patching
+ * `.credentials` afterwards is not a supported pattern and will NOT authenticate.
+ * Use `buildGA4Client()` from `service-account.ts` instead.
  */
-export function getGA4Client(accessToken: string): BetaAnalyticsDataClient {
-  const auth = new GoogleAuth({
-    // Provide an OAuth2 client with the user's token instead of a service account.
-    // This lets each user query only their own GA4 properties.
-  });
-
-  const authClient = auth.fromAPIKey(""); // placeholder — overridden below
-  (authClient as any).credentials = { access_token: accessToken };
-
-  return new BetaAnalyticsDataClient({
-    authClient: authClient as any,
-  });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function getGA4Client(_accessToken: string): BetaAnalyticsDataClient {
+  throw new Error(
+    "getGA4Client is deprecated and broken. Use buildGA4Client() from service-account.ts"
+  );
 }
 
 /**

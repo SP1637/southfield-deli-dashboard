@@ -9,12 +9,8 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
-  async redirects() {
-    return [
-      // Root → Overview dashboard
-      { source: "/", destination: "/overview", permanent: false },
-    ];
-  },
+  // Root routing is handled by src/middleware.ts
+  // New clients → /connect (onboarding), returning clients → /overview
 };
 
 export default nextConfig;

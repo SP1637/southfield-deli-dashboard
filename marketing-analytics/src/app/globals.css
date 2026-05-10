@@ -24,14 +24,18 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
+    /* ── Databox-style: white sidebar, light-gray content bg ── */
+    --page-bg: 220 14% 96%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 47.4% 15%;
     --sidebar-primary: 221.2 83.2% 53.3%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
+    --sidebar-accent: 226 100% 97%;
+    --sidebar-accent-foreground: 221.2 83.2% 48%;
+    --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 221.2 83.2% 53.3%;
+    --sidebar-muted: 215.4 16.3% 52%;
+    --sidebar-section-label: 215.4 16.3% 58%;
   }
 
   .dark {
@@ -54,18 +58,61 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+    --page-bg: 222.2 84% 4.9%;
     --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 210 40% 98%;
+    --sidebar-foreground: 210 40% 92%;
     --sidebar-primary: 217.2 91.2% 59.8%;
     --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 217 33% 13%;
-    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-accent: 217 33% 16%;
+    --sidebar-accent-foreground: 217.2 91.2% 70%;
     --sidebar-border: 217 33% 13%;
     --sidebar-ring: 224.3 76.3% 48%;
+    --sidebar-muted: 215 20.2% 55%;
+    --sidebar-section-label: 215 20.2% 48%;
   }
 }
 
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
+}
+
+/* ── PDF / Print styles ──────────────────────────────────────────────────── */
+@media print {
+  /* Hide non-content elements */
+  aside,
+  header,
+  .print\:hidden,
+  [data-ai-chat],
+  nav { display: none !important; }
+
+  /* Remove sidebar offset */
+  .md\:ml-64 { margin-left: 0 !important; }
+
+  /* Full-width content */
+  main, body, html { width: 100% !important; }
+
+  /* Force light mode for printing */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;
+  }
+
+  /* Prevent page breaks inside cards */
+  .rounded-xl, .rounded-lg, [class*="Card"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Add watermark / footer */
+  @page {
+    margin: 1.5cm;
+    @bottom-center {
+      content: "FunnelIQ Analytics — Confidential";
+      font-size: 9pt;
+      color: #999;
+    }
+  }
 }
