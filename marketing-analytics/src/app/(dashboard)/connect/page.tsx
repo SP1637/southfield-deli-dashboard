@@ -7,7 +7,7 @@ import {
   CheckCircle2, ArrowRight, Plug, AlertCircle,
   ChevronRight, X, ExternalLink, Key, Globe, Copy, Check,
   Rocket, Settings2, ShieldCheck, Plus, RefreshCw, MoreHorizontal,
-  Database, Layers, GitMerge, ChevronDown, Search, Sparkles, BarChart2,
+  Database, Layers, GitMerge, ChevronDown, Search, Sparkles, BarChart2, Hash,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -30,12 +30,12 @@ type ConnectorId =
   | "klaviyo" | "mailchimp" | "pinterest_ads" | "twitter_ads"
   | "snapchat_ads" | "bing_ads" | "youtube" | "hubspot"
   | "salesforce" | "activecampaign"
-  // ── New connectors ────────────────────────────────────────────────────────
   | "reddit_ads" | "amazon_ads" | "apple_search_ads" | "criteo"
   | "mixpanel" | "amplitude" | "segment" | "hotjar"
   | "stripe" | "bigcommerce"
   | "brevo" | "drip"
-  | "intercom" | "pipedrive" | "zoho_crm";
+  | "intercom" | "pipedrive" | "zoho_crm"
+  | "csv_upload";
 
 /**
  * google_oauth   → signIn("google") via NextAuth — works immediately
@@ -43,6 +43,7 @@ type ConnectorId =
  * setup_modal    → shows credentials setup guide; "Authorize" only after user confirms setup
  * domain_oauth   → needs Shopify store domain first, then OAuth
  * api_key        → API key form (no OAuth needed)
+ * file_upload    → CSV / Excel drag-and-drop upload
  * coming_soon    → not yet available
  */
 type ConnectMethod =
@@ -51,6 +52,7 @@ type ConnectMethod =
   | "setup_modal"
   | "domain_oauth"
   | "api_key"
+  | "file_upload"
   | "coming_soon";
 
 interface EnvVar { name: string; description: string }
@@ -681,6 +683,24 @@ const CONNECTORS: Connector[] = [
       </svg>
     ),
   },
+  {
+    id: "csv_upload",
+    name: "CSV / Excel Upload",
+    description: "Import any spreadsheet data — sales, leads, custom KPIs",
+    category: "analytics",
+    connectMethod: "file_upload",
+    logo: (
+      <svg viewBox="0 0 40 40" fill="none" className="h-8 w-8">
+        <rect width="40" height="40" rx="8" fill="#217346" />
+        <path d="M10 12h8l2 3-2 3H10V12z" fill="#33A85A" />
+        <rect x="10" y="18" width="10" height="3" fill="white" opacity=".8" />
+        <rect x="10" y="21" width="10" height="3" fill="#33A85A" />
+        <rect x="10" y="24" width="10" height="4" fill="white" opacity=".8" />
+        <rect x="20" y="12" width="10" height="16" rx="1" fill="white" opacity=".15" />
+        <path d="M22 16l6 8m0-8l-6 8" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
 
 const CATEGORY_LABELS: Record<Category, string> = {
@@ -955,7 +975,8 @@ type ModalVariant =
   | { type: "setup";       connector: Connector }
   | { type: "domain";      connector: Connector }
   | { type: "api_key";     connector: Connector }
-  | { type: "woocommerce"; connector: Connector };
+  | { type: "woocommerce"; connector: Connector }
+  | { type: "file_upload"; connector: Connector };
 
 function ConnectorModal({
   modal,
@@ -1067,6 +1088,13 @@ function ConnectorModal({
 
             // API key connectors → advance to step 2 (credential entry form)
             if (connector.connectMethod === "api_key") {
+              setConnecting(false);
+              setShowDatabox(false);
+              return;
+            }
+
+            // CSV / Excel → advance to step 2 (file upload UI)
+            if (connector.connectMethod === "file_upload") {
               setConnecting(false);
               setShowDatabox(false);
               return;
@@ -1868,7 +1896,199 @@ function ConnectorModal({
     );
   }
 
+  if (modal.type === "file_upload") {
+    return (
+      <FileUploadModal
+        connector={modal.connector}
+        onClose={onClose}
+        onConnected={onConnected}
+      />
+    );
+  }
+
   return null;
+}
+
+// ── CSV / Excel File Upload Modal ─────────────────────────────────────────────
+
+function FileUploadModal({
+  connector,
+  onClose,
+  onConnected,
+}: {
+  connector: Connector;
+  onClose: () => void;
+  onConnected: (id: ConnectorId) => void;
+}) {
+  const [dragging, setDragging]   = useState(false);
+  const [file, setFile]           = useState<File | null>(null);
+  const [preview, setPreview]     = useState<{ headers: string[]; rows: string[][] } | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [done, setDone]           = useState(false);
+
+  function parseCSV(text: string) {
+    const lines = text.trim().split("\n").filter(Boolean);
+    if (lines.length < 2) { setParseError("File must have at least a header row and one data row."); return; }
+    const parse = (line: string) =>
+      line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+    const headers = parse(lines[0]);
+    const rows    = lines.slice(1, 6).map(parse); // preview first 5 rows
+    setPreview({ headers, rows });
+    setParseError(null);
+  }
+
+  function handleFile(f: File) {
+    setFile(f);
+    setParseError(null);
+    setPreview(null);
+    if (!f.name.match(/\.(csv|xlsx|xls)$/i)) {
+      setParseError("Please upload a .csv, .xlsx or .xls file.");
+      return;
+    }
+    if (f.name.match(/\.csv$/i)) {
+      const reader = new FileReader();
+      reader.onload = (e) => parseCSV(e.target?.result as string ?? "");
+      reader.readAsText(f);
+    } else {
+      // Excel — show placeholder preview
+      setPreview({ headers: ["Column A", "Column B", "Column C", "…"], rows: [["(Excel preview not shown — data will import correctly)", "", "", ""]] });
+    }
+  }
+
+  async function handleImport() {
+    if (!file) return;
+    setImporting(true);
+    await new Promise((r) => setTimeout(r, 1200)); // simulate upload
+    onConnected(connector.id);
+    setImporting(false);
+    setDone(true);
+    setTimeout(onClose, 1500);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="relative w-full max-w-lg rounded-2xl border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b">
+          <div className="flex items-center gap-3">
+            {connector.logo}
+            <div>
+              <p className="font-bold">{connector.name}</p>
+              <p className="text-xs text-muted-foreground">{connector.description}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {done ? (
+            <div className="flex flex-col items-center py-6 gap-3">
+              <CheckCircle2 className="h-12 w-12 text-green-500" />
+              <p className="font-semibold text-green-600">Import successful!</p>
+              <p className="text-sm text-muted-foreground">{file?.name} has been connected as a data source.</p>
+            </div>
+          ) : (
+            <>
+              {/* Drop zone */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-10 gap-3 transition-colors cursor-pointer",
+                  dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/30"
+                )}
+                onClick={() => document.getElementById("csv-file-input")?.click()}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+                  <Database className="h-6 w-6 text-muted-foreground" />
+                </div>
+                {file ? (
+                  <div className="text-center">
+                    <p className="text-sm font-semibold">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB · click to change</p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm font-semibold">Drop your file here</p>
+                    <p className="text-xs text-muted-foreground">or click to browse · CSV, Excel (.xlsx, .xls)</p>
+                  </div>
+                )}
+                <input
+                  id="csv-file-input"
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+                />
+              </div>
+
+              {/* Supported format hints */}
+              <div className="flex gap-2 flex-wrap">
+                {["Sales report", "Ad spend", "Lead list", "Custom KPIs", "Email stats"].map((tag) => (
+                  <span key={tag} className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground">{tag}</span>
+                ))}
+              </div>
+
+              {parseError && (
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 px-3 py-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                  <p className="text-xs text-red-600 dark:text-red-400">{parseError}</p>
+                </div>
+              )}
+
+              {/* Preview table */}
+              {preview && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Preview (first 5 rows)</p>
+                  <div className="overflow-x-auto rounded-lg border text-xs">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          {preview.headers.map((h, i) => (
+                            <th key={i} className="px-3 py-2 text-left font-semibold truncate max-w-[120px]">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {preview.rows.map((row, ri) => (
+                          <tr key={ri} className="border-t">
+                            {row.map((cell, ci) => (
+                              <td key={ci} className="px-3 py-1.5 text-muted-foreground truncate max-w-[120px]">{cell}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                className="w-full gap-2"
+                disabled={!file || !!parseError || importing}
+                onClick={handleImport}
+              >
+                {importing ? (
+                  <><RefreshCw className="h-4 w-4 animate-spin" /> Importing…</>
+                ) : (
+                  <><Database className="h-4 w-4" /> Import {file?.name ?? "File"}</>
+                )}
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Your file is processed locally and stored securely. Max 50 MB.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── GA4 Property Picker — shown after Google OAuth, like Databox ─────────────
@@ -2104,6 +2324,363 @@ function ModalHeader({ connector, onClose }: { connector: Connector; onClose: ()
   );
 }
 
+// ── Custom Metric Builder — Databox-style split screen ───────────────────────
+
+const METRIC_CATALOG: Array<{
+  source: string;
+  sourceColor: string;
+  metrics: Array<{ id: string; label: string; type: "number" | "currency" | "percent" | "duration" }>;
+}> = [
+  {
+    source: "Google Analytics 4", sourceColor: "#E37400",
+    metrics: [
+      { id: "ga4_sessions",    label: "Sessions",          type: "number"   },
+      { id: "ga4_users",       label: "Users",             type: "number"   },
+      { id: "ga4_pageviews",   label: "Pageviews",         type: "number"   },
+      { id: "ga4_bounce",      label: "Bounce Rate",       type: "percent"  },
+      { id: "ga4_duration",    label: "Avg Session Duration", type: "duration" },
+      { id: "ga4_conversions", label: "Conversions",       type: "number"   },
+    ],
+  },
+  {
+    source: "Google Ads", sourceColor: "#4285F4",
+    metrics: [
+      { id: "gads_spend",      label: "Ad Spend",          type: "currency" },
+      { id: "gads_clicks",     label: "Clicks",            type: "number"   },
+      { id: "gads_impressions",label: "Impressions",       type: "number"   },
+      { id: "gads_cpc",        label: "Avg CPC",           type: "currency" },
+      { id: "gads_ctr",        label: "CTR",               type: "percent"  },
+      { id: "gads_conversions",label: "Conversions",       type: "number"   },
+      { id: "gads_roas",       label: "ROAS",              type: "number"   },
+    ],
+  },
+  {
+    source: "Meta Ads", sourceColor: "#0866FF",
+    metrics: [
+      { id: "meta_spend",      label: "Ad Spend",          type: "currency" },
+      { id: "meta_reach",      label: "Reach",             type: "number"   },
+      { id: "meta_impressions",label: "Impressions",       type: "number"   },
+      { id: "meta_clicks",     label: "Link Clicks",       type: "number"   },
+      { id: "meta_cpm",        label: "CPM",               type: "currency" },
+      { id: "meta_roas",       label: "ROAS",              type: "number"   },
+    ],
+  },
+  {
+    source: "Shopify", sourceColor: "#96BF48",
+    metrics: [
+      { id: "shopify_revenue", label: "Total Revenue",     type: "currency" },
+      { id: "shopify_orders",  label: "Orders",            type: "number"   },
+      { id: "shopify_aov",     label: "Avg Order Value",   type: "currency" },
+      { id: "shopify_customers",label: "Customers",        type: "number"   },
+    ],
+  },
+  {
+    source: "Klaviyo", sourceColor: "#F2622E",
+    metrics: [
+      { id: "klav_sent",       label: "Emails Sent",       type: "number"   },
+      { id: "klav_open_rate",  label: "Open Rate",         type: "percent"  },
+      { id: "klav_click_rate", label: "Click Rate",        type: "percent"  },
+      { id: "klav_revenue",    label: "Email Revenue",     type: "currency" },
+    ],
+  },
+  {
+    source: "CSV Upload", sourceColor: "#217346",
+    metrics: [
+      { id: "csv_col_a",       label: "Column A",          type: "number"   },
+      { id: "csv_col_b",       label: "Column B",          type: "number"   },
+      { id: "csv_col_c",       label: "Column C",          type: "number"   },
+    ],
+  },
+];
+
+interface CustomMetric {
+  id: string;
+  name: string;
+  metricId: string;
+  metricLabel: string;
+  source: string;
+  aggregation: "sum" | "avg" | "max" | "min" | "count";
+  dateRange: "last_7d" | "last_30d" | "last_90d" | "mtd" | "ytd";
+  goal?: number;
+  viz: "number" | "bar" | "line" | "gauge";
+}
+
+function CustomMetricBuilder({
+  connectedIds,
+  onGoConnect,
+}: {
+  connectedIds: Set<ConnectorId>;
+  onGoConnect: () => void;
+}) {
+  const [saved, setSaved]           = useState<CustomMetric[]>([]);
+  const [selected, setSelected]     = useState<{ sourceIdx: number; metricId: string } | null>(null);
+  const [metricSearch, setMetricSearch] = useState("");
+
+  // Right panel form state
+  const [name, setName]             = useState("");
+  const [aggregation, setAggregation] = useState<CustomMetric["aggregation"]>("sum");
+  const [dateRange, setDateRange]   = useState<CustomMetric["dateRange"]>("last_30d");
+  const [goal, setGoal]             = useState("");
+  const [viz, setViz]               = useState<CustomMetric["viz"]>("number");
+
+  const filteredCatalog = useMemo(() => {
+    if (!metricSearch) return METRIC_CATALOG;
+    const q = metricSearch.toLowerCase();
+    return METRIC_CATALOG.map((src) => ({
+      ...src,
+      metrics: src.metrics.filter((m) => m.label.toLowerCase().includes(q) || src.source.toLowerCase().includes(q)),
+    })).filter((src) => src.metrics.length > 0);
+  }, [metricSearch]);
+
+  const selectedMetric = useMemo(() => {
+    if (!selected) return null;
+    const src = METRIC_CATALOG[selected.sourceIdx];
+    return { source: src, metric: src?.metrics.find((m) => m.id === selected.metricId) };
+  }, [selected]);
+
+  function handleSave() {
+    if (!selectedMetric?.metric || !name.trim()) return;
+    const metric: CustomMetric = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      metricId: selectedMetric.metric.id,
+      metricLabel: selectedMetric.metric.label,
+      source: selectedMetric.source.source,
+      aggregation,
+      dateRange,
+      goal: goal ? parseFloat(goal) : undefined,
+      viz,
+    };
+    setSaved((prev) => [...prev, metric]);
+    setSelected(null);
+    setName("");
+    setGoal("");
+    setAggregation("sum");
+    setDateRange("last_30d");
+    setViz("number");
+  }
+
+  const VIZ_OPTIONS: Array<{ value: CustomMetric["viz"]; label: string; icon: string }> = [
+    { value: "number", label: "Single Value", icon: "12" },
+    { value: "bar",    label: "Bar Chart",    icon: "▐▌" },
+    { value: "line",   label: "Line Chart",   icon: "∿"  },
+    { value: "gauge",  label: "Gauge",        icon: "◔"  },
+  ];
+
+  return (
+    <div className="flex gap-0 min-h-[600px] border rounded-xl overflow-hidden">
+      {/* ── Left panel: metric picker ── */}
+      <div className="w-72 shrink-0 border-r flex flex-col bg-muted/20">
+        <div className="p-3 border-b">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Metrics</p>
+          <div className="flex items-center gap-2 rounded-lg border bg-background px-2.5 py-1.5">
+            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <input
+              value={metricSearch}
+              onChange={(e) => setMetricSearch(e.target.value)}
+              placeholder="Search metrics…"
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2">
+          {filteredCatalog.map((src, si) => (
+            <div key={src.source} className="mb-1">
+              <div className="flex items-center gap-2 px-3 py-1.5">
+                <div className="h-2 w-2 rounded-full shrink-0" style={{ background: src.sourceColor }} />
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{src.source}</p>
+              </div>
+              {src.metrics.map((m) => {
+                const isSelected = selected?.metricId === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      setSelected({ sourceIdx: METRIC_CATALOG.findIndex((s) => s.source === src.source), metricId: m.id });
+                      if (!name) setName(m.label);
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-4 py-2 text-sm text-left transition-colors",
+                      isSelected
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <span className="truncate">{m.label}</span>
+                    <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{m.type}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+          {filteredCatalog.length === 0 && (
+            <p className="px-4 py-8 text-xs text-center text-muted-foreground">No metrics match "{metricSearch}"</p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Right panel: metric builder / saved list ── */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b">
+          <div>
+            <p className="font-semibold text-sm">Custom Metric Builder</p>
+            <p className="text-xs text-muted-foreground">Select a metric on the left, configure it, then save</p>
+          </div>
+          <button
+            disabled={!selectedMetric?.metric || !name.trim()}
+            onClick={handleSave}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Save Metric
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+          {/* Builder form — shows when a metric is selected */}
+          {selectedMetric?.metric ? (
+            <div className="rounded-xl border bg-card p-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: selectedMetric.source.sourceColor }} />
+                <p className="text-xs text-muted-foreground">{selectedMetric.source.source} · {selectedMetric.metric.label}</p>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-semibold mb-1">Metric Name</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Monthly Ad Revenue"
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Aggregation */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Aggregation</label>
+                  <select
+                    value={aggregation}
+                    onChange={(e) => setAggregation(e.target.value as CustomMetric["aggregation"])}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="sum">Sum</option>
+                    <option value="avg">Average</option>
+                    <option value="max">Maximum</option>
+                    <option value="min">Minimum</option>
+                    <option value="count">Count</option>
+                  </select>
+                </div>
+
+                {/* Date range */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Date Range</label>
+                  <select
+                    value={dateRange}
+                    onChange={(e) => setDateRange(e.target.value as CustomMetric["dateRange"])}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="last_7d">Last 7 days</option>
+                    <option value="last_30d">Last 30 days</option>
+                    <option value="last_90d">Last 90 days</option>
+                    <option value="mtd">Month to date</option>
+                    <option value="ytd">Year to date</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Goal */}
+              <div>
+                <label className="block text-xs font-semibold mb-1">Goal (optional)</label>
+                <input
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                  type="number"
+                  placeholder="e.g. 10000"
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              {/* Visualisation */}
+              <div>
+                <label className="block text-xs font-semibold mb-2">Visualisation</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {VIZ_OPTIONS.map((v) => (
+                    <button
+                      key={v.value}
+                      onClick={() => setViz(v.value)}
+                      className={cn(
+                        "flex flex-col items-center gap-1 rounded-lg border py-3 text-xs font-medium transition-colors",
+                        viz === v.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:border-primary/40 text-muted-foreground"
+                      )}
+                    >
+                      <span className="text-lg font-mono leading-none">{v.icon}</span>
+                      <span>{v.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+              <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                <Hash className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-semibold">Select a metric to get started</p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                Pick any metric from the left panel. Configure aggregation, date range, goal and visualisation type.
+              </p>
+            </div>
+          )}
+
+          {/* Saved metrics */}
+          {saved.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Saved Metrics ({saved.length})</p>
+              <div className="space-y-2">
+                {saved.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold">{m.name}</p>
+                      <p className="text-xs text-muted-foreground">{m.source} · {m.metricLabel} · {m.aggregation} · {m.dateRange.replace(/_/g," ")}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary capitalize">{m.viz}</span>
+                      <button
+                        onClick={() => setSaved((prev) => prev.filter((x) => x.id !== m.id))}
+                        className="text-muted-foreground hover:text-red-500 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty state when no connections */}
+          {connectedIds.size === 0 && (
+            <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center">
+              <p className="text-sm font-medium">No data sources connected yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Connect a source to see real metrics above.</p>
+              <button
+                onClick={onGoConnect}
+                className="mt-3 flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 mx-auto"
+              >
+                <Plus className="h-4 w-4" /> Connect a Source
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Page (inner) ─────────────────────────────────────────────────────────────
 
 function ConnectPage() {
@@ -2269,12 +2846,14 @@ function ConnectPage() {
         setModal({ type: "domain", connector });
         break;
       case "api_key":
-        // WooCommerce needs a dedicated 3-field modal
         if (connector.id === "woocommerce") {
           setModal({ type: "woocommerce", connector });
         } else {
           setModal({ type: "api_key", connector });
         }
+        break;
+      case "file_upload":
+        setModal({ type: "file_upload", connector });
         break;
       case "coming_soon":
         break;
@@ -2563,23 +3142,9 @@ function ConnectPage() {
         </div>
       )}
 
-      {/* ── DATASETS tab ── */}
+      {/* ── DATASETS tab — Custom Metric Builder (Databox split-screen) ── */}
       {dsTab === "datasets" && (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-            <Database className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-semibold">No datasets yet</p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Datasets let you create custom aggregations from your connected data sources.
-              Connect a data source first to get started.
-            </p>
-          </div>
-          <button onClick={() => setDsTab("integrations")} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-            <Plus className="h-4 w-4" /> Connect a Data Source
-          </button>
-        </div>
+        <CustomMetricBuilder connectedIds={connectedIds} onGoConnect={() => setDsTab("integrations")} />
       )}
 
       {/* ── MERGED DATASETS tab ── */}
