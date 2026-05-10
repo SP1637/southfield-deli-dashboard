@@ -116,6 +116,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
 
   return (
     <aside
@@ -208,11 +210,11 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               title={value.charAt(0).toUpperCase() + value.slice(1)}
               className={cn(
                 "flex flex-1 items-center justify-center py-1.5 text-xs transition-colors",
-                theme === value
+                mounted && theme === value
                   ? "bg-primary text-white"
                   : "hover:bg-[hsl(var(--sidebar-accent))]"
               )}
-              style={{ color: theme === value ? "white" : "hsl(var(--sidebar-muted))" }}
+              style={{ color: mounted && theme === value ? "white" : "hsl(var(--sidebar-muted))" }}
             >
               <Icon className="h-3.5 w-3.5" />
             </button>
