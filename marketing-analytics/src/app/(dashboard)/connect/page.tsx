@@ -7,7 +7,7 @@ import {
   CheckCircle2, ArrowRight, Plug, AlertCircle,
   ChevronRight, X, ExternalLink, Key, Globe, Copy, Check,
   Rocket, Settings2, ShieldCheck, Plus, RefreshCw, MoreHorizontal,
-  Database, Layers, GitMerge, ChevronDown, Search,
+  Database, Layers, GitMerge, ChevronDown, Search, Sparkles, BarChart2,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -2613,6 +2613,19 @@ function ConnectPage() {
         />
       )}
 
+      {/* ── AI Connection Assistant ── */}
+      <AIConnectionAssistant
+        connectedIds={connectedIds}
+        onSearch={setSearch}
+        onCategory={setFilter}
+      />
+
+      {/* ── One-Click Popular Packs ── */}
+      <PopularPacks connectedIds={connectedIds} onConnect={handleConnect} />
+
+      {/* ── Smart Suggestion (contextual, after ≥1 connection) ── */}
+      <SmartSuggestionBanner connectedIds={connectedIds} onConnect={handleConnect} />
+
       {/* ── Databox-style filter bar ── */}
       <DataboxFilterBar
         search={search}
@@ -2627,11 +2640,11 @@ function ConnectPage() {
         totalCount={CONNECTORS.length}
       />
 
-      {/* ── Main layout: grid + right detail panel ── */}
-      <div className="flex gap-4 min-h-0">
+      {/* ── Main layout: sections + right detail panel ── */}
+      <div className="flex gap-5 min-h-0 items-start">
 
-        {/* ── Left: collapsible sections + cards ── */}
-        <div className="flex-1 min-w-0 space-y-1">
+        {/* ── Left: collapsible sections ── */}
+        <div className="flex-1 min-w-0">
           {integrationsFiltered.length === 0 ? (
             <div className="py-20 text-center">
               <p className="text-sm font-medium text-muted-foreground">No integrations match <strong className="text-foreground">{search}</strong></p>
@@ -2654,9 +2667,12 @@ function ConnectPage() {
           )}
         </div>
 
-        {/* ── Right: sticky detail panel ── */}
-        {detailConnector && (
-          <div className="hidden lg:block w-72 shrink-0">
+        {/* ── Right: sticky detail panel (280px like Databox) ── */}
+        <div className={cn(
+          "hidden lg:block w-[280px] shrink-0 transition-all duration-200",
+          detailConnector ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}>
+          {detailConnector && (
             <DataboxDetailPanel
               connector={detailConnector}
               isConnected={connectedIds.has(detailConnector.id)}
@@ -2664,8 +2680,8 @@ function ConnectPage() {
               onClose={() => setDetailConnector(null)}
               sourceMeta={ALL_SOURCE_META[detailConnector.id]}
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Footer ── */}
@@ -2734,10 +2750,246 @@ function ConnectPage() {
   );
 }
 
+// ── Smart Suggestions ─────────────────────────────────────────────────────────
+
+const SMART_SUGGESTIONS: Array<{
+  trigger: ConnectorId[];  // show when ALL of these are connected
+  suggest: ConnectorId;    // connector to suggest
+  headline: string;
+  reason: string;
+}> = [
+  { trigger: ["meta_ads", "ga4"],     suggest: "shopify",    headline: "Connect Shopify to unlock Revenue & ROAS insights", reason: "You connected Meta + GA4" },
+  { trigger: ["shopify", "ga4"],      suggest: "klaviyo",    headline: "Add Klaviyo to see email-driven revenue attribution", reason: "You connected Shopify + GA4" },
+  { trigger: ["google_ads", "meta_ads"], suggest: "ga4",     headline: "Connect GA4 to tie ad spend to on-site conversions", reason: "You connected Google Ads + Meta" },
+  { trigger: ["ga4"],                 suggest: "google_ads", headline: "Connect Google Ads to see cost-per-acquisition",    reason: "You connected GA4" },
+  { trigger: ["shopify"],             suggest: "meta_ads",   headline: "Add Meta Ads to track Facebook & Instagram ROAS",   reason: "You connected Shopify" },
+  { trigger: ["klaviyo"],             suggest: "shopify",    headline: "Connect Shopify to see email revenue contribution",  reason: "You connected Klaviyo" },
+  { trigger: ["google_ads"],          suggest: "google_search_console", headline: "Add Search Console to combine paid + organic data", reason: "You connected Google Ads" },
+];
+
+function SmartSuggestionBanner({
+  connectedIds,
+  onConnect,
+}: {
+  connectedIds: Set<ConnectorId>;
+  onConnect: (c: Connector) => void;
+}) {
+  if (connectedIds.size < 1) return null;
+
+  const match = SMART_SUGGESTIONS.find(
+    (s) =>
+      s.trigger.every((id) => connectedIds.has(id)) &&
+      !connectedIds.has(s.suggest)
+  );
+  if (!match) return null;
+
+  const connector = CONNECTORS.find((c) => c.id === match.suggest);
+  if (!connector) return null;
+
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30 px-4 py-3 mb-1">
+      <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400 mt-0.5 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-violet-500 dark:text-violet-400 font-medium mb-0.5">{match.reason}</p>
+        <p className="text-sm font-semibold text-violet-800 dark:text-violet-200">{match.headline}</p>
+      </div>
+      <button
+        onClick={() => onConnect(connector)}
+        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+      >
+        <Plus className="h-3.5 w-3.5" /> Connect
+      </button>
+    </div>
+  );
+}
+
+// ── One-Click Popular Packs ───────────────────────────────────────────────────
+
+const PACKS = [
+  {
+    id: "dtc",
+    name: "DTC Starter Pack",
+    description: "Shopify + Meta + GA4 + Klaviyo",
+    icon: Rocket,
+    color: "bg-orange-500",
+    connectors: ["shopify", "meta_ads", "ga4", "klaviyo"] as ConnectorId[],
+  },
+  {
+    id: "agency",
+    name: "Agency Pack",
+    description: "Google Ads + Meta + LinkedIn + TikTok",
+    icon: Layers,
+    color: "bg-blue-500",
+    connectors: ["google_ads", "meta_ads", "linkedin_ads", "tiktok_ads"] as ConnectorId[],
+  },
+  {
+    id: "saas",
+    name: "SaaS Growth Pack",
+    description: "GA4 + Mixpanel + HubSpot + Stripe",
+    icon: BarChart2,
+    color: "bg-emerald-500",
+    connectors: ["ga4", "mixpanel", "hubspot", "stripe"] as ConnectorId[],
+  },
+];
+
+function PopularPacks({
+  connectedIds,
+  onConnect,
+}: {
+  connectedIds: Set<ConnectorId>;
+  onConnect: (c: Connector) => void;
+}) {
+  return (
+    <div className="mb-2">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-0.5">
+        Popular Packs — connect multiple at once
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {PACKS.map((pack) => {
+          const Icon = pack.icon;
+          const totalInPack = pack.connectors.length;
+          const connectedInPack = pack.connectors.filter((id) => connectedIds.has(id)).length;
+          const allConnected = connectedInPack === totalInPack;
+          return (
+            <button
+              key={pack.id}
+              disabled={allConnected}
+              onClick={() => {
+                // Connect each un-connected connector in the pack sequentially
+                pack.connectors.forEach((id) => {
+                  if (!connectedIds.has(id)) {
+                    const c = CONNECTORS.find((x) => x.id === id);
+                    if (c) onConnect(c);
+                  }
+                });
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all",
+                allConnected
+                  ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 opacity-70 cursor-default"
+                  : "border-border hover:border-primary/40 hover:bg-muted/40 active:scale-[0.98]"
+              )}
+            >
+              <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", pack.color)}>
+                <Icon className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold leading-tight truncate">{pack.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{pack.description}</p>
+              </div>
+              {allConnected ? (
+                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              ) : (
+                <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
+                  {connectedInPack}/{totalInPack}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── AI Connection Assistant ───────────────────────────────────────────────────
+
+const AI_SUGGESTIONS = [
+  { q: "help me connect all my ad accounts", matches: ["google_ads", "meta_ads", "linkedin_ads", "tiktok_ads"] as ConnectorId[] },
+  { q: "connect ecommerce",                  matches: ["shopify", "woocommerce", "klaviyo"] as ConnectorId[] },
+  { q: "set up email marketing",             matches: ["klaviyo", "mailchimp", "brevo"] as ConnectorId[] },
+  { q: "connect crm",                        matches: ["hubspot", "salesforce", "pipedrive"] as ConnectorId[] },
+  { q: "connect analytics",                  matches: ["ga4", "google_search_console", "mixpanel"] as ConnectorId[] },
+];
+
+function AIConnectionAssistant({
+  connectedIds,
+  onSearch,
+  onCategory,
+}: {
+  connectedIds: Set<ConnectorId>;
+  onSearch: (q: string) => void;
+  onCategory: (c: Category | "all") => void;
+}) {
+  const [input, setInput] = useState("");
+  const [reply, setReply] = useState<string | null>(null);
+
+  function handleAsk() {
+    const q = input.trim().toLowerCase();
+    if (!q) return;
+
+    // Check preset mappings first
+    const preset = AI_SUGGESTIONS.find((s) => q.includes(s.q.split(" ").slice(-2).join(" ")) || s.q.includes(q));
+    if (preset) {
+      const notConnected = preset.matches.filter((id) => !connectedIds.has(id));
+      const names = notConnected.map((id) => CONNECTORS.find((c) => c.id === id)?.name).filter(Boolean);
+      setReply(`I'll filter to ${names.length > 0 ? names.join(", ") : "those connectors"} for you.`);
+      // Map to category filter based on the first match
+      const firstConnector = CONNECTORS.find((c) => preset.matches.includes(c.id));
+      if (firstConnector) {
+        if (["google_ads", "meta_ads", "linkedin_ads", "tiktok_ads", "pinterest_ads", "snapchat_ads", "bing_ads", "twitter_ads", "reddit_ads", "amazon_ads", "apple_search_ads", "criteo"].includes(firstConnector.id)) {
+          onCategory("ads");
+        } else if (["ga4", "google_search_console", "mixpanel", "amplitude", "segment", "hotjar"].includes(firstConnector.id)) {
+          onCategory("analytics");
+        } else if (["shopify", "woocommerce", "bigcommerce", "stripe"].includes(firstConnector.id)) {
+          onCategory("ecommerce");
+        } else if (["klaviyo", "mailchimp", "brevo", "drip", "activecampaign"].includes(firstConnector.id)) {
+          onCategory("email");
+        } else if (["hubspot", "salesforce", "pipedrive", "intercom", "zoho_crm"].includes(firstConnector.id)) {
+          onCategory("crm");
+        } else {
+          onCategory("all");
+        }
+      }
+    } else {
+      // Fallback: use as search
+      onSearch(q);
+      setReply(`Showing results for "${input.trim()}"`);
+    }
+    setInput("");
+    setTimeout(() => setReply(null), 4000);
+  }
+
+  return (
+    <div className="rounded-xl border bg-gradient-to-r from-primary/5 to-violet-500/5 px-4 py-3 mb-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles className="h-3.5 w-3.5 text-primary" />
+        <p className="text-xs font-semibold text-primary">AI Connection Assistant</p>
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAsk()}
+          placeholder={"Help me connect all my ad accounts…"}
+          className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+        />
+        <button
+          onClick={handleAsk}
+          disabled={!input.trim()}
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-40 transition-colors"
+        >
+          Ask
+        </button>
+      </div>
+      {reply && (
+        <p className="mt-2 text-xs text-primary font-medium flex items-center gap-1.5">
+          <CheckCircle2 className="h-3.5 w-3.5" /> {reply}
+        </p>
+      )}
+      <p className="mt-1.5 text-[11px] text-muted-foreground">
+        Try: "connect my ecommerce stack" · "set up email marketing" · "link all ad accounts"
+      </p>
+    </div>
+  );
+}
+
 // ── Databox filter bar ────────────────────────────────────────────────────────
 
 type SortBy     = "popularity" | "name_asc" | "name_desc";
 type ShowFilter = "all" | "connected" | "not_connected";
+
+// ── Databox-style filter bar ──────────────────────────────────────────────────
 
 function DataboxFilterBar({
   search, onSearch, sortBy, onSortBy, categoryFilter, onCategory, showFilter, onShow, connectedCount, totalCount,
@@ -2748,59 +3000,50 @@ function DataboxFilterBar({
   showFilter: ShowFilter; onShow: (v: ShowFilter) => void;
   connectedCount: number; totalCount: number;
 }) {
+  const selectCls = "rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer appearance-none pr-8 bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")] bg-no-repeat bg-[right_10px_center]";
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2.5 border-b pb-4 mb-1">
       {/* Search */}
-      <div className="relative flex-1 min-w-48">
+      <div className="relative flex-1 min-w-52">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <input
           value={search}
           onChange={e => onSearch(e.target.value)}
           placeholder="Search…"
-          className="w-full rounded-lg border bg-card pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full rounded-lg border bg-card pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       </div>
 
-      {/* Sort by */}
-      <select
-        value={sortBy}
-        onChange={e => onSortBy(e.target.value as SortBy)}
-        className="rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-      >
-        <option value="popularity">Sort by: Popularity</option>
-        <option value="name_asc">Sort by: Name A–Z</option>
-        <option value="name_desc">Sort by: Name Z–A</option>
-      </select>
+      <div className="flex items-center gap-2 ml-auto">
+        {/* Sort by */}
+        <select value={sortBy} onChange={e => onSortBy(e.target.value as SortBy)} className={selectCls}>
+          <option value="popularity">Popularity</option>
+          <option value="name_asc">Name A–Z</option>
+          <option value="name_desc">Name Z–A</option>
+        </select>
 
-      {/* Category */}
-      <select
-        value={categoryFilter}
-        onChange={e => onCategory(e.target.value as Category | "all")}
-        className="rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-      >
-        <option value="all">Category: All</option>
-        <option value="analytics">Analytics</option>
-        <option value="ads">Advertising</option>
-        <option value="ecommerce">Ecommerce</option>
-        <option value="email">Email</option>
-        <option value="crm">CRM</option>
-      </select>
+        {/* Category */}
+        <select value={categoryFilter} onChange={e => onCategory(e.target.value as Category | "all")} className={selectCls}>
+          <option value="all">Category</option>
+          <option value="analytics">Analytics</option>
+          <option value="ads">Advertising</option>
+          <option value="ecommerce">E-commerce</option>
+          <option value="email">Email Marketing</option>
+          <option value="crm">CRM</option>
+        </select>
 
-      {/* Show */}
-      <select
-        value={showFilter}
-        onChange={e => onShow(e.target.value as ShowFilter)}
-        className="rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-      >
-        <option value="all">Show: All</option>
-        <option value="connected">Connected ({connectedCount})</option>
-        <option value="not_connected">Not connected ({totalCount - connectedCount})</option>
-      </select>
+        {/* Show */}
+        <select value={showFilter} onChange={e => onShow(e.target.value as ShowFilter)} className={selectCls}>
+          <option value="all">Show: All</option>
+          <option value="connected">Connected ({connectedCount})</option>
+          <option value="not_connected">Not connected</option>
+        </select>
+      </div>
     </div>
   );
 }
 
-// ── Databox connector card ────────────────────────────────────────────────────
+// ── Databox connector card — horizontal list-item style ───────────────────────
 
 function DataboxConnectorCard({
   connector,
@@ -2820,58 +3063,57 @@ function DataboxConnectorCard({
     <div
       onClick={() => !isComingSoon && onSelect()}
       className={cn(
-        "group relative flex flex-col items-center gap-2.5 rounded-xl border p-4 cursor-pointer transition-all duration-150 select-none",
+        "group relative flex items-center gap-3 rounded-lg border px-3.5 py-3 cursor-pointer transition-all duration-150 select-none",
         isSelected
-          ? "border-primary bg-primary/5 shadow-sm"
+          ? "border-primary/60 bg-primary/5 shadow-sm"
           : isConnected
-          ? "border-green-500/40 bg-green-50/30 dark:bg-green-950/10"
+          ? "border-green-400/40 bg-green-50/40 dark:bg-green-950/10"
           : isComingSoon
-          ? "opacity-40 cursor-default border-border"
-          : "border-border bg-card hover:border-primary/40 hover:shadow-sm"
+          ? "opacity-40 cursor-default border-border bg-card"
+          : "border-border bg-card hover:border-primary/30 hover:bg-muted/20 hover:shadow-sm"
       )}
     >
-      {/* Connected dot */}
-      {isConnected && (
-        <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-green-500 ring-2 ring-background" />
-      )}
-      {isComingSoon && (
-        <span className="absolute top-2 right-2 rounded-full border px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">Soon</span>
-      )}
-
-      {/* Logo — round like Databox */}
+      {/* Circular logo — exactly like Databox */}
       <div className={cn(
-        "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 bg-white dark:bg-card shadow-sm transition-transform",
-        isSelected ? "border-primary/40 scale-105" : "border-border group-hover:border-primary/30",
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-white dark:bg-zinc-900 shadow-sm transition-all duration-150",
+        isSelected  ? "border-primary/50 scale-105" :
+        isConnected ? "border-green-400/50" :
+        "border-border/60 group-hover:border-primary/30"
       )}>
-        <div className="h-7 w-7 flex items-center justify-center">
+        <div className="h-6 w-6 flex items-center justify-center">
           {connector.logo}
         </div>
       </div>
 
-      {/* Name */}
-      <p className="text-xs font-semibold text-center leading-tight text-foreground line-clamp-2 w-full">
-        {connector.name}
-      </p>
+      {/* Name + action */}
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold text-foreground leading-tight truncate">{connector.name}</p>
+        {isConnected ? (
+          <span className="text-[11px] font-medium text-green-600 dark:text-green-400">Connected</span>
+        ) : isComingSoon ? (
+          <span className="text-[11px] text-muted-foreground">Coming soon</span>
+        ) : (
+          <button
+            onClick={(e) => { e.stopPropagation(); onConnect(); }}
+            className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline underline-offset-2"
+          >
+            Datasets
+          </button>
+        )}
+      </div>
 
-      {/* Datasets link — like Databox */}
-      {isConnected ? (
-        <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">✓ Connected</span>
-      ) : (
-        <button
-          onClick={(e) => { e.stopPropagation(); if (!isComingSoon) onConnect(); }}
-          className={cn(
-            "text-[11px] font-medium text-primary hover:underline underline-offset-2",
-            isComingSoon && "pointer-events-none text-muted-foreground"
-          )}
-        >
-          {isComingSoon ? "Coming soon" : "Datasets"}
-        </button>
+      {/* Status indicator */}
+      {isConnected && (
+        <span className="shrink-0 h-2 w-2 rounded-full bg-green-500 ring-2 ring-background" />
+      )}
+      {isSelected && !isConnected && (
+        <ChevronRight className="shrink-0 h-3.5 w-3.5 text-primary opacity-70" />
       )}
     </div>
   );
 }
 
-// ── Databox section (collapsible) ─────────────────────────────────────────────
+// ── Databox section — collapsible with section header ────────────────────────
 
 function DataboxSection({
   label, connectors, connectedIds, selectedId, onSelect, onConnect,
@@ -2887,27 +3129,28 @@ function DataboxSection({
   const connectedInSection = connectors.filter(c => connectedIds.has(c.id)).length;
 
   return (
-    <div className="rounded-xl border bg-card overflow-hidden">
-      {/* Section header */}
+    <div className="mb-2">
+      {/* Section header — Databox style: chevron left + uppercase label */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center gap-2 px-1 py-2 group hover:opacity-80 transition-opacity"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
-          <span className="text-[10px] text-muted-foreground">({connectors.length})</span>
-          {connectedInSection > 0 && (
-            <span className="text-[10px] font-semibold text-green-600 bg-green-50 dark:bg-green-950/30 rounded-full px-2 py-0.5">
-              {connectedInSection} connected
-            </span>
-          )}
-        </div>
-        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", open ? "rotate-180" : "")} />
+        <ChevronDown className={cn(
+          "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+          !open && "-rotate-90"
+        )} />
+        <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+        {connectedInSection > 0 && (
+          <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:text-green-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />{connectedInSection} connected
+          </span>
+        )}
+        <span className="ml-auto text-[10px] text-muted-foreground/60">{connectors.length}</span>
       </button>
 
-      {/* Grid */}
+      {/* Grid — 2–4 cols of horizontal cards like Databox */}
       {open && (
-        <div className="px-4 pb-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mt-1">
           {connectors.map((c) => (
             <DataboxConnectorCard
               key={c.id}
@@ -2936,80 +3179,95 @@ function DataboxDetailPanel({
   sourceMeta?: { name: string; logo: string; syncFreq: string; metrics: number };
 }) {
   const catLabel: Record<Category, string> = {
-    analytics: "Analytics", ads: "Advertising", ecommerce: "Ecommerce", email: "Email Marketing", crm: "CRM",
+    analytics: "Analytics", ads: "Advertising", ecommerce: "E-commerce", email: "Email Marketing", crm: "CRM",
+  };
+
+  const connMethodLabel: Record<string, string> = {
+    google_oauth:  "Google OAuth",
+    google_shared: "Google OAuth",
+    setup_modal:   "OAuth",
+    domain_oauth:  "Domain OAuth",
+    api_key:       "API Key",
+    coming_soon:   "Coming soon",
   };
 
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden sticky top-4">
+    <div className="rounded-xl border bg-card shadow-md overflow-hidden sticky top-4">
       {/* Header */}
-      <div className="flex items-start justify-between p-4 border-b">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-border bg-white dark:bg-card shadow-sm">
-            <div className="h-6 w-6 flex items-center justify-center">{connector.logo}</div>
-          </div>
-          <div>
-            <p className="text-sm font-bold leading-tight">{connector.name}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{catLabel[connector.category]}</p>
-          </div>
+      <div className="relative flex items-start gap-3 p-5 border-b bg-gradient-to-br from-muted/40 to-background">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 border-border bg-white dark:bg-zinc-900 shadow-sm">
+          <div className="h-8 w-8 flex items-center justify-center">{connector.logo}</div>
         </div>
-        <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:text-foreground">
+        <div className="flex-1 min-w-0 pt-0.5">
+          <p className="text-sm font-bold leading-tight">{connector.name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{catLabel[connector.category]}</p>
+          {isConnected && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">Active · Syncing</span>
+            </div>
+          )}
+        </div>
+        <button onClick={onClose} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-4 space-y-4">
-        {/* Status */}
+      <div className="p-5 space-y-5">
+
+        {/* CTA */}
         {isConnected ? (
-          <div className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 px-3 py-2">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-semibold text-green-700 dark:text-green-400">Connected · Active</span>
+          <div className="flex items-center gap-2.5 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 px-4 py-3">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-green-700 dark:text-green-400">Connected & Active</p>
+              <p className="text-[11px] text-green-600/80 dark:text-green-500/80 mt-0.5">Data syncing {sourceMeta?.syncFreq?.toLowerCase() ?? "daily"}</p>
+            </div>
           </div>
         ) : (
           <button
             onClick={onConnect}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all"
           >
-            <Plug className="h-3.5 w-3.5" />
-            Connect {connector.name}
+            <Plug className="h-4 w-4" />
+            Connect {connector.name.split(" ")[0]}
           </button>
         )}
 
         {/* Description */}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">About</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">About</p>
           <p className="text-xs text-muted-foreground leading-relaxed">{connector.description}</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
-            <p className="text-base font-bold text-foreground">{sourceMeta?.metrics ?? "—"}</p>
-            <p className="text-[10px] text-muted-foreground">Metrics</p>
+        {/* Stats row */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-xl border bg-muted/30 p-3 text-center">
+            <p className="text-xl font-bold text-foreground leading-none">{sourceMeta?.metrics ?? "—"}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Metrics</p>
           </div>
-          <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
-            <p className="text-xs font-bold text-foreground">{sourceMeta?.syncFreq ?? "Daily"}</p>
-            <p className="text-[10px] text-muted-foreground">Sync freq.</p>
+          <div className="rounded-xl border bg-muted/30 p-3 text-center">
+            <p className="text-sm font-bold text-foreground leading-none">{sourceMeta?.syncFreq ?? "Daily"}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Sync freq.</p>
           </div>
         </div>
 
-        {/* Method badge */}
+        {/* Badges */}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Connection type</p>
-          <div className="flex items-center gap-2">
-            {connector.connectMethod === "google_oauth" && (
-              <span className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">OAuth</span>
-            )}
-            {connector.connectMethod === "api_key" && (
-              <span className="rounded-md border px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">API Key</span>
-            )}
-            {connector.connectMethod === "setup_modal" && (
-              <span className="rounded-md border px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">OAuth</span>
-            )}
-            {connector.connectMethod === "domain_oauth" && (
-              <span className="rounded-md border px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Domain OAuth</span>
-            )}
-            <span className="rounded-md border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 px-2.5 py-1 text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">GDPR</span>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Connection</p>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold text-foreground">
+              <Key className="h-3 w-3 text-muted-foreground" />
+              {connMethodLabel[connector.connectMethod] ?? "API"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 px-2.5 py-1.5 text-[11px] font-semibold text-green-700 dark:text-green-400">
+              <ShieldCheck className="h-3 w-3" />
+              GDPR
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 dark:text-blue-400">
+              🇪🇺 EU Safe
+            </span>
           </div>
         </div>
 
@@ -3019,12 +3277,17 @@ function DataboxDetailPanel({
             href={connector.docs}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-primary hover:underline underline-offset-2"
+            className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline underline-offset-2"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             {connector.docsLabel ?? "View documentation"}
           </a>
         )}
+
+        {/* Read-only note */}
+        <p className="text-[10px] text-muted-foreground/60 leading-relaxed border-t pt-3">
+          Read-only access · We never write to your account · Encrypted in transit
+        </p>
       </div>
     </div>
   );

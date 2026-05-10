@@ -16,18 +16,24 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import React from "react";
 
-// ─── Nav structure ────────────────────────────────────────────────────────────
+// ─── Nav structure (Databox-style) ───────────────────────────────────────────
 interface NavItem { label: string; href: string; icon: React.ElementType; badge?: string }
 
+// Top-level items (no section heading) — mirrors Databox's primary nav
 const MAIN_NAV: NavItem[] = [
+  { label: "Ask Genie",         href: "/ask",        icon: Sparkles, badge: "New" },
   { label: "Home",              href: "/overview",   icon: Home      },
-  { label: "Ask AI",            href: "/ask",        icon: Sparkles, badge: "AI" },
-  { label: "Campaign Intel",    href: "/campaigns",  icon: Target,   badge: "New" },
-  { label: "Metrics Hub",       href: "/metrics",    icon: Hash      },
+  { label: "Metrics",           href: "/metrics",    icon: Hash      },
+  { label: "Databoards",        href: "/campaigns",  icon: BarChart2 },
+  { label: "Reports",           href: "/reports",    icon: FileText  },
+  { label: "Goals & OKRs",      href: "/goals",      icon: Target    },
+  { label: "Forecasts",         href: "/forecasts",  icon: TrendingUp},
+  { label: "Spaces",            href: "/templates",  icon: Layers    },
+  { label: "Data Manager",      href: "/connect",    icon: Plug      },
 ];
 
 const ADS_NAV: NavItem[] = [
-  { label: "Campaigns",        href: "/ads",        icon: Megaphone },
+  { label: "All Campaigns",    href: "/ads",        icon: Megaphone },
   { label: "Budget Pacing",    href: "/budget",     icon: Wallet    },
 ];
 
@@ -49,21 +55,13 @@ const SOCIAL_NAV: NavItem[] = [
   { label: "Social Insights",  href: "/media",      icon: Instagram },
 ];
 
-const INTELLIGENCE_NAV: NavItem[] = [
-  { label: "Goals & OKRs",     href: "/goals",      icon: Target    },
-  { label: "Forecasts",        href: "/forecasts",  icon: TrendingUp},
-  { label: "TV Mode",          href: "/tv",         icon: Tv2       },
-];
-
 const TOOLS_NAV: NavItem[] = [
-  { label: "KPI Templates",    href: "/templates",  icon: Layers    },
-  { label: "AI Reports",       href: "/reports",    icon: FileText  },
   { label: "Alerts",           href: "/alerts",     icon: Bell      },
+  { label: "TV Mode",          href: "/tv",         icon: Tv2       },
   { label: "Roadmap",          href: "/roadmap",    icon: Map       },
 ];
 
 const SETTINGS_NAV: NavItem[] = [
-  { label: "Data Sources",     href: "/connect",        icon: Plug  },
   { label: "Team & Access",    href: "/settings/team",  icon: Users },
 ];
 
@@ -189,7 +187,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         <NavSection label="Web Analytics"items={ANALYTICS_NAV}    pathname={pathname} onClose={onClose} />
         <NavSection label="SEO"          items={SEO_NAV}           pathname={pathname} onClose={onClose} />
         <NavSection label="Social"       items={SOCIAL_NAV}        pathname={pathname} onClose={onClose} />
-        <NavSection label="Intelligence" items={INTELLIGENCE_NAV}  pathname={pathname} onClose={onClose} />
         <NavSection label="Tools"        items={TOOLS_NAV}         pathname={pathname} onClose={onClose} />
 
         <div className="border-t mx-3" style={{ borderColor: "hsl(var(--sidebar-border))" }} />
