@@ -110,9 +110,16 @@ const DASHBOARD_PATHS = [
   "/seasonality",
   "/predictive-trends",
   // Planning
+  "/planning",
+  "/campaign-planner",
   "/campaign-calendar",
+  "/marketing-calendar",
+  "/launch-planner",
   "/budget",
   "/objectives",
+  "/okrs",
+  "/quarter-planning",
+  "/scenario-planning",
   "/forecast-simulator",
   // Integrations
   "/connect",

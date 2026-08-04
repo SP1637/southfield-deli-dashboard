@@ -14,7 +14,7 @@ import {
   Zap, AlertTriangle, Brain, Sliders, Wand2, Sprout,
   Calendar, Calculator, Flag, Activity,
   Plug, Database, Code2, UserCog, Settings,
-  BookOpen, Star, GitBranch,
+  BookOpen, Star, GitBranch, Rocket,
   Home, BarChart2,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -132,10 +132,15 @@ const FORECAST_INTELLIGENCE: NavItem[] = [
 ];
 
 const PLANNING: NavItem[] = [
-  { label: "Campaign Calendar",    href: "/campaign-calendar",   icon: Calendar },
+  { label: "Planning Overview",    href: "/planning",            icon: Layers },
+  { label: "Campaign Planner",     href: "/campaign-planner",    icon: Megaphone },
   { label: "Budget Planner",       href: "/budget",              icon: Calculator },
+  { label: "Marketing Calendar",   href: "/marketing-calendar",  icon: Calendar },
+  { label: "Launch Planner",       href: "/launch-planner",      icon: Rocket },
   { label: "Objectives",           href: "/objectives",          icon: Flag },
-  { label: "Forecast Simulator",   href: "/forecast-simulator",  icon: Activity },
+  { label: "OKRs",                 href: "/okrs",                icon: Target },
+  { label: "Quarter Planning",     href: "/quarter-planning",    icon: BarChart3 },
+  { label: "Scenario Planning",    href: "/scenario-planning",   icon: Sliders },
 ];
 
 const INTEGRATIONS: NavItem[] = [
