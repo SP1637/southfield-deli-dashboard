@@ -100,6 +100,15 @@ const DASHBOARD_PATHS = [
   "/seo-optimizer",
   "/creative-optimizer",
   "/audience-optimizer",
+  // Forecast Intelligence
+  "/forecast-intelligence",
+  "/revenue-forecast",
+  "/lead-forecast",
+  "/budget-forecast",
+  "/sales-forecast",
+  "/demand-forecast",
+  "/seasonality",
+  "/predictive-trends",
   // Planning
   "/campaign-calendar",
   "/budget",

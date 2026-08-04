@@ -120,6 +120,17 @@ const AI_DECISION_CENTER: NavItem[] = [
   { label: "Audience Optimizer",   href: "/audience-optimizer",  icon: Users },
 ];
 
+const FORECAST_INTELLIGENCE: NavItem[] = [
+  { label: "Forecast Overview",   href: "/forecast-intelligence", icon: TrendingUp },
+  { label: "Revenue Forecast",    href: "/revenue-forecast",      icon: DollarSign },
+  { label: "Lead Forecast",       href: "/lead-forecast",         icon: Users },
+  { label: "Budget Forecast",     href: "/budget-forecast",       icon: Sliders },
+  { label: "Sales Forecast",      href: "/sales-forecast",        icon: ShoppingBag },
+  { label: "Demand Forecast",     href: "/demand-forecast",       icon: BarChart3 },
+  { label: "Seasonality",         href: "/seasonality",           icon: Calendar },
+  { label: "Predictive Trends",   href: "/predictive-trends",     icon: LineChart },
+];
+
 const PLANNING: NavItem[] = [
   { label: "Campaign Calendar",    href: "/campaign-calendar",   icon: Calendar },
   { label: "Budget Planner",       href: "/budget",              icon: Calculator },
@@ -255,6 +266,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         <NavSection label="💰 Sales Intelligence"      items={SALES_INTELLIGENCE}      pathname={pathname} onClose={onClose} defaultOpen={true} />
         <NavSection label="🔍 Competitor Intelligence" items={COMPETITOR_INTELLIGENCE}  pathname={pathname} onClose={onClose} defaultOpen={false} />
         <NavSection label="🤖 AI Decision Center"      items={AI_DECISION_CENTER}      pathname={pathname} onClose={onClose} defaultOpen={true} />
+        <NavSection label="📈 Forecast Intelligence"   items={FORECAST_INTELLIGENCE}   pathname={pathname} onClose={onClose} defaultOpen={false} />
         <NavSection label="📅 Planning"                items={PLANNING}                pathname={pathname} onClose={onClose} defaultOpen={false} />
 
         <div className="border-t mx-3 my-2" style={{ borderColor: "hsl(var(--sidebar-border))" }} />
