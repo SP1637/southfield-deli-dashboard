@@ -14,7 +14,7 @@ import {
   Zap, AlertTriangle, Brain, Sliders, Wand2, Sprout,
   Calendar, Calculator, Flag, Activity,
   Plug, Database, Code2, UserCog, Settings,
-  BookOpen, Star, GitBranch, Rocket,
+  BookOpen, Star, GitBranch, Rocket, Bot,
   Home, BarChart2,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -27,7 +27,8 @@ interface NavItem { label: string; href: string; icon: React.ElementType; badge?
 
 const DECISION_INTELLIGENCE: NavItem[] = [
   { label: "Executive Summary",    href: "/executive-summary",   icon: FileBarChart },
-  { label: "AI Copilot",            href: "/ask",                 icon: Sparkles,   badge: "AI" },
+  { label: "AI Copilot",           href: "/ask",                 icon: Sparkles,   badge: "AI" },
+  { label: "Autonomous AI",        href: "/autonomous-ai",       icon: Bot,        badge: "New" },
   { label: "Recommendations",      href: "/recommendations",     icon: Lightbulb },
   { label: "Smart Alerts",         href: "/alerts",              icon: Bell },
   { label: "Forecasts",            href: "/forecasts",           icon: TrendingUp },

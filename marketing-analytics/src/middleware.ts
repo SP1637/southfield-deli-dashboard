@@ -23,6 +23,7 @@ const DASHBOARD_PATHS = [
   "/home",
   "/ask",
   // Decision Intelligence
+  "/autonomous-ai",
   "/executive-summary",
   "/recommendations",
   "/alerts",
