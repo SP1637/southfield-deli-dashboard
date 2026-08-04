@@ -4,6 +4,9 @@ import {
   OAUTH_PROVIDERS, getClientId, getClientSecret, type OAuthProviderId,
 } from "@/lib/oauth-providers";
 import { exchangeCode, writeToken } from "@/lib/token-store";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { upsertUser, saveIntegration } from "@/lib/supabase";
 
 export async function GET(
   req: NextRequest,
@@ -36,15 +39,13 @@ export async function GET(
     return NextResponse.redirect(url.toString());
   }
 
-  // ── Exchange code for access_token ───────────────────────────────────────
+  // ── Exchange code for tokens ──────────────────────────────────────────────
   const config = OAUTH_PROVIDERS[provider as OAuthProviderId];
   const clientId     = getClientId(provider as OAuthProviderId);
   const clientSecret = getClientSecret(provider as OAuthProviderId);
 
   const redirectUri = `${base}/api/connect/callback/${provider}`;
-
-  // Shopify: token exchange URL is per-shop (not a static URL in oauth-providers.ts)
-  const shopDomain = cookieStore.get(`oauth_shop_${provider}`)?.value;
+  const shopDomain  = cookieStore.get(`oauth_shop_${provider}`)?.value;
   const tokenUrl = provider === "shopify" && shopDomain
     ? `https://${shopDomain}.myshopify.com/admin/oauth/access_token`
     : config?.tokenUrl;
@@ -52,8 +53,7 @@ export async function GET(
   const response = NextResponse.redirect(`${base}/connect?connected=${provider}`);
 
   if (config && clientId && clientSecret && tokenUrl) {
-    // TikTok uses a JSON body instead of form-encoded
-    let tokenData: { access_token?: string; refresh_token?: string } | null = null;
+    let tokenData: { access_token?: string; refresh_token?: string; expires_in?: number; scope?: string } | null = null;
 
     if (provider === "tiktok_ads") {
       try {
@@ -76,12 +76,39 @@ export async function GET(
     }
 
     if (tokenData?.access_token) {
-      // Store access_token in httpOnly cookie (obfuscated)
+      // ── 1. Cookie fallback (always works, no DB needed) ──────────────────
       await writeToken(response, provider, tokenData.access_token);
-
-      // If we got a refresh_token, store it separately (Google Ads, Bing)
       if (tokenData.refresh_token) {
         await writeToken(response, `${provider}_refresh`, tokenData.refresh_token, 60 * 60 * 24 * 365);
+      }
+
+      // ── 2. Persist to Supabase if user is logged in ──────────────────────
+      try {
+        const session = await getServerSession(authOptions);
+        if (session?.user?.email) {
+          const user = await upsertUser({
+            email: session.user.email,
+            name: session.user.name ?? null,
+            image: session.user.image ?? null,
+          });
+          if (user) {
+            const expiresAt = tokenData.expires_in
+              ? new Date(Date.now() + tokenData.expires_in * 1000)
+              : null;
+            await saveIntegration({
+              userId: user.id,
+              provider,
+              accessToken: tokenData.access_token,
+              refreshToken: tokenData.refresh_token ?? null,
+              expiresAt,
+              scope: tokenData.scope ?? null,
+              metadata: shopDomain ? { shopDomain } : {},
+            });
+          }
+        }
+      } catch (dbErr: any) {
+        // DB save failed — cookie fallback still works, don't break the flow
+        console.error("[callback] Supabase save failed:", dbErr.message);
       }
     }
   }

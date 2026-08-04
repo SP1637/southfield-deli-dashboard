@@ -1,4 +1,4 @@
-﻿import { ComingSoon } from "@/components/dashboard/coming-soon";
+﻿import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
 export default function Page() {
-  return <ComingSoon title="Budget Forecast" section="Forecast Intelligence" />;
+  return <DemoPageTemplate title="Budget Forecast" section="Forecast Intelligence" />;
 }

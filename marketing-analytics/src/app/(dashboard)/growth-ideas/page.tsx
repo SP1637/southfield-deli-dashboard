@@ -1,4 +1,4 @@
-﻿import { ComingSoon } from "@/components/dashboard/coming-soon";
+﻿import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
 export default function Page() {
-  return <ComingSoon title="Growth Ideas" section="AI Decision Center" />;
+  return <DemoPageTemplate title="Growth Ideas" section="AI Decision Center" />;
 }

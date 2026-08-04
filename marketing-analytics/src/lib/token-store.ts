@@ -1,19 +1,18 @@
 /**
- * Cookie-based token store for OAuth access tokens.
+ * Token store — reads/writes OAuth tokens.
  *
- * Tokens are stored as httpOnly cookies so they never reach client-side JS.
- * We XOR-obfuscate with NEXTAUTH_SECRET so the raw token isn't visible in
- * server logs or cookie inspection tools.
+ * Priority order for reads:
+ *   1. Supabase DB (persistent, per-user, survives browser clears)
+ *   2. httpOnly cookie (session fallback, set immediately after OAuth callback)
  *
- * Production upgrade path: swap readToken/writeToken to use a DB (e.g. Vercel KV).
+ * Writes always go to both (cookie for the current request response, DB for persistence).
  */
 import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { getUserByEmail, getIntegration, saveIntegration } from "@/lib/supabase";
 
 const SECRET = process.env.NEXTAUTH_SECRET;
-if (!SECRET) {
-  // In build/test environments this may fire — safe to warn; at runtime it must be set
-  console.warn("[token-store] NEXTAUTH_SECRET is not set — token encryption will fail at runtime");
-}
 
 function xorEncode(text: string): string {
   if (!SECRET) throw new Error("NEXTAUTH_SECRET must be set to store tokens");
@@ -33,7 +32,33 @@ function xorDecode(encoded: string): string {
   }
 }
 
+/**
+ * Read a token for a provider.
+ * Tries Supabase first (if user is logged in), falls back to cookie.
+ */
 export async function readToken(provider: string): Promise<string | null> {
+  // Strip _refresh suffix for DB lookup — we store both in metadata or as refresh_token
+  const isRefresh = provider.endsWith("_refresh");
+  const baseProvider = isRefresh ? provider.replace("_refresh", "") : provider;
+
+  // ── 1. Try Supabase ────────────────────────────────────────────────────────
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email) {
+      const user = await getUserByEmail(session.user.email);
+      if (user) {
+        const integration = await getIntegration(user.id, baseProvider);
+        if (integration) {
+          const token = isRefresh ? integration.refresh_token : integration.access_token;
+          if (token) return token;
+        }
+      }
+    }
+  } catch {
+    // Supabase unavailable — fall through to cookie
+  }
+
+  // ── 2. Cookie fallback ─────────────────────────────────────────────────────
   const store = await cookies();
   const raw = store.get(`token_${provider}`)?.value;
   if (!raw) return null;
@@ -41,11 +66,15 @@ export async function readToken(provider: string): Promise<string | null> {
   return decoded || null;
 }
 
+/**
+ * Write a token to a response's cookies (XOR-obfuscated, httpOnly).
+ * Call saveIntegration() separately to persist to Supabase.
+ */
 export async function writeToken(
   res: { cookies: { set: (name: string, value: string, opts: object) => void } },
   provider: string,
   token: string,
-  maxAge = 60 * 60 * 24 * 30  // 30 days
+  maxAge = 60 * 60 * 24 * 30
 ) {
   res.cookies.set(`token_${provider}`, xorEncode(token), {
     httpOnly: true,
@@ -56,7 +85,7 @@ export async function writeToken(
   });
 }
 
-/** Exchange an OAuth authorization code for an access + refresh token. */
+/** Exchange an OAuth authorization code for access + refresh tokens. */
 export async function exchangeCode(params: {
   tokenUrl: string;
   code: string;
@@ -64,7 +93,7 @@ export async function exchangeCode(params: {
   clientSecret: string;
   redirectUri: string;
   extraBody?: Record<string, string>;
-}): Promise<{ access_token: string; refresh_token?: string; expires_in?: number } | null> {
+}): Promise<{ access_token: string; refresh_token?: string; expires_in?: number; scope?: string } | null> {
   try {
     const body = new URLSearchParams({
       grant_type: "authorization_code",
@@ -90,6 +119,92 @@ export async function exchangeCode(params: {
     return await res.json();
   } catch (err: any) {
     console.error("[OAuth exchange]", err.message);
+    return null;
+  }
+}
+
+/**
+ * Refresh a Google OAuth access token using the stored refresh token.
+ * Updates Supabase and returns the new access token.
+ */
+export async function refreshGoogleToken(userId: string, provider: string): Promise<string | null> {
+  try {
+    const integration = await getIntegration(userId, provider);
+    if (!integration?.refresh_token) return null;
+
+    const clientId     = process.env.GOOGLE_ADS_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_ADS_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientId || !clientSecret) return null;
+
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: integration.refresh_token,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }).toString(),
+    });
+
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.access_token) return null;
+
+    const expiresAt = json.expires_in
+      ? new Date(Date.now() + json.expires_in * 1000)
+      : null;
+
+    await saveIntegration({
+      userId,
+      provider,
+      accessToken: json.access_token,
+      refreshToken: integration.refresh_token,
+      expiresAt,
+    });
+
+    return json.access_token;
+  } catch (err: any) {
+    console.error("[refreshGoogleToken]", err.message);
+    return null;
+  }
+}
+
+/**
+ * Refresh a Meta access token (long-lived tokens via /oauth/access_token).
+ */
+export async function refreshMetaToken(userId: string): Promise<string | null> {
+  try {
+    const integration = await getIntegration(userId, "meta_ads");
+    if (!integration?.access_token) return null;
+
+    const appId     = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+    if (!appId || !appSecret) return null;
+
+    const res = await fetch(
+      `https://graph.facebook.com/v19.0/oauth/access_token?` +
+      `grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}` +
+      `&fb_exchange_token=${integration.access_token}`
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.access_token) return null;
+
+    const expiresAt = json.expires_in
+      ? new Date(Date.now() + json.expires_in * 1000)
+      : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days default
+
+    await saveIntegration({
+      userId,
+      provider: "meta_ads",
+      accessToken: json.access_token,
+      expiresAt,
+    });
+
+    return json.access_token;
+  } catch (err: any) {
+    console.error("[refreshMetaToken]", err.message);
     return null;
   }
 }
