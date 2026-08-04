@@ -145,7 +145,7 @@ const PLANNING: NavItem[] = [
 ];
 
 const INTEGRATIONS: NavItem[] = [
-  { label: "Connect Platforms",    href: "/connect",             icon: Plug },
+  { label: "Marketing Data Hub",    href: "/connect",             icon: Plug },
   { label: "Data Sources",         href: "/data-sources",        icon: Database },
   { label: "API",                  href: "/api-docs",            icon: Code2 },
   { label: "Users",                href: "/settings/team",       icon: UserCog },
