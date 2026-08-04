@@ -144,11 +144,15 @@ const SESSION_COOKIE_PREFIXES = [
 ];
 
 function isAuthenticated(req: NextRequest): boolean {
-  return req.cookies.getAll().some(({ name }) =>
+  // NextAuth session cookie
+  const hasSession = req.cookies.getAll().some(({ name }) =>
     SESSION_COOKIE_PREFIXES.some(
       (prefix) => name === prefix || name.startsWith(prefix + ".")
     )
   );
+  // Demo mode cookie — allows accessing dashboard without Google sign-in
+  const isDemo = req.cookies.has("nexoryx_demo");
+  return hasSession || isDemo;
 }
 
 export function middleware(req: NextRequest) {
@@ -159,7 +163,8 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/share/")        // read-only shared dashboards — public
+    pathname.startsWith("/share/") ||     // read-only shared dashboards — public
+    pathname === "/demo-login"            // demo entry page — always public
   ) {
     return NextResponse.next();
   }

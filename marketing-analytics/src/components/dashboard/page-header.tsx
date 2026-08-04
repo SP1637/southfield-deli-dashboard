@@ -2,6 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import React from "react";
+import { BarChart3, ArrowRight } from "lucide-react";
+import { useDemoMode } from "./demo-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface PageTab {
@@ -81,17 +83,64 @@ export function PageHeader({
   );
 }
 
+// ─── Empty state for real (non-demo) users ───────────────────────────────────
+function RealUserEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5 text-center px-4">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+        <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
+      </div>
+      <div className="space-y-1.5">
+        <p className="text-base font-semibold">No data connected yet</p>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Connect your marketing platforms to see real insights here.
+          Takes less than 2 minutes.
+        </p>
+      </div>
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        <a
+          href="/connect"
+          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Connect platforms
+          <ArrowRight className="h-4 w-4" />
+        </a>
+        <a
+          href="/demo-login"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Or view demo data →
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page content wrapper ─────────────────────────────────────────────────────
 /**
  * Wrap page content. Provides consistent padding on the light-gray bg.
+ * By default, non-demo users see an empty state (real data coming soon).
+ * Pass publicPage to show content for all users (e.g. /ask, /connect).
  */
 export function PageContent({
   children,
   className,
+  publicPage = false,
 }: {
   children: React.ReactNode;
   className?: string;
+  publicPage?: boolean;
 }) {
+  const { isDemo } = useDemoMode();
+
+  if (!publicPage && !isDemo) {
+    return (
+      <div className={cn("p-6", className)}>
+        <RealUserEmptyState />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("p-6 space-y-5", className)}>
       {children}

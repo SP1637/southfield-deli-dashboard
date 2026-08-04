@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 export default async function DashboardLayout({
@@ -7,10 +6,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions).catch(() => null);
+  const cookieStore = await cookies();
+  const isDemo = cookieStore.has("nexoryx_demo");
 
   return (
-    <DashboardShell isDemo={!session}>
+    <DashboardShell isDemo={isDemo}>
       {children}
     </DashboardShell>
   );

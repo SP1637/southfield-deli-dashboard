@@ -20,6 +20,7 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { useDemoMode } from "./demo-context";
 import Image from "next/image";
 import React from "react";
 
@@ -214,8 +215,14 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
+  const { isDemo } = useDemoMode();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => { setMounted(true); }, []);
+
+  function exitDemo() {
+    document.cookie = "nexoryx_demo=; path=/; max-age=0";
+    window.location.href = "/login";
+  }
 
   const homeActive = pathname === "/home";
 
@@ -242,6 +249,22 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      {/* Demo mode badge */}
+      {isDemo && (
+        <div className="mx-3 my-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-primary uppercase tracking-widest">Demo Mode</p>
+            <p className="text-[10px] text-muted-foreground">Sample data only</p>
+          </div>
+          <button
+            onClick={exitDemo}
+            className="text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Exit
+          </button>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 space-y-1 px-1">

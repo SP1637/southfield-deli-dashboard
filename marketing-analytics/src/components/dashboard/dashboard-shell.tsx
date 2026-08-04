@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, BarChart2, Printer, X, Zap } from "lucide-react";
+import { Menu, BarChart2, Printer, X, Zap, FlaskConical } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { AIChat } from "./ai-chat";
+import { DemoContext } from "./demo-context";
 import { cn } from "@/lib/utils";
 
 // ── Platform pills shown in the banner ───────────────────────────────────────
@@ -104,7 +105,13 @@ interface DashboardShellProps {
 export function DashboardShell({ children, isDemo = false }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  function exitDemo() {
+    document.cookie = "nexoryx_demo=; path=/; max-age=0";
+    window.location.href = "/login";
+  }
+
   return (
+    <DemoContext.Provider value={{ isDemo }}>
     <div className="flex min-h-screen" style={{ background: "hsl(var(--page-bg, 220 14% 96%))" }}>
 
       {/* Mobile overlay */}
@@ -147,23 +154,31 @@ export function DashboardShell({ children, isDemo = false }: DashboardShellProps
           </button>
         </header>
 
-        {/* ── Not-logged-in demo banner (unauthenticated visitors) ── */}
+        {/* ── Demo mode top banner ── */}
         {isDemo && (
-          <div className="flex items-center gap-3 border-b bg-[hsl(var(--sidebar-background))] px-4 py-2 shrink-0 print:hidden"
-            style={{ borderColor: "hsl(var(--border))" }}>
+          <div className="flex items-center gap-3 border-b px-4 py-2 shrink-0 print:hidden"
+            style={{ background: "hsl(262 83% 58% / 0.08)", borderColor: "hsl(262 83% 58% / 0.25)" }}>
             <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/15 shrink-0">
-              <Zap className="h-3 w-3 text-primary" />
+              <FlaskConical className="h-3 w-3 text-primary" />
             </div>
-            <p className="flex-1 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Sample data</span> — sign in to connect GA4, Google Ads, Meta, TikTok and more.
+            <p className="flex-1 text-xs">
+              <span className="font-bold text-primary">DEMO MODE</span>
+              <span className="text-muted-foreground ml-1.5">— You're viewing sample data. This is a preview for clients.</span>
             </p>
             <a href="/login" className="shrink-0 rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-              Sign in →
+              Sign in with your account →
             </a>
+            <button
+              onClick={exitDemo}
+              className="shrink-0 rounded p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              title="Exit demo"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
         )}
 
-        {/* ── Sample data banner (signed in but no GA4 property set) ── */}
+        {/* ── Real user — sample data reminder ── */}
         {!isDemo && <SampleDataBanner />}
 
         {/* ── Page content ── */}
@@ -175,5 +190,6 @@ export function DashboardShell({ children, isDemo = false }: DashboardShellProps
       {/* AI Chat FAB */}
       <AIChat />
     </div>
+    </DemoContext.Provider>
   );
 }

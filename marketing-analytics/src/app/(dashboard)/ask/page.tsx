@@ -269,7 +269,7 @@ export default function AskPage() {
         }
       />
 
-      <PageContent>
+      <PageContent publicPage>
 
         {/* ── Empty state / hero ── */}
         {!hasMessages && (

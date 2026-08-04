@@ -385,7 +385,7 @@ export default function ConnectPage() {
   return (
     <>
       <PageHeader title="Marketing Data Hub" />
-      <PageContent>
+      <PageContent publicPage>
 
         {/* ── Hero stats ── */}
         <div className="rounded-xl border bg-gradient-to-r from-primary/5 to-card p-5 space-y-4">
