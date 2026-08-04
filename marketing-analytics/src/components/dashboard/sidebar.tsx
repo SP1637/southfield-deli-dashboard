@@ -107,12 +107,17 @@ const COMPETITOR_INTELLIGENCE: NavItem[] = [
 ];
 
 const AI_DECISION_CENTER: NavItem[] = [
+  { label: "AI Overview",          href: "/ai-decision-center",  icon: Brain,   badge: "AI" },
+  { label: "Recommendations",      href: "/recommendations",     icon: Lightbulb },
   { label: "Opportunities",        href: "/opportunities",       icon: Zap },
-  { label: "Problems",             href: "/problems",            icon: AlertTriangle },
+  { label: "Risks",                href: "/risks",               icon: AlertTriangle },
   { label: "Predictions",          href: "/predictions",         icon: Brain },
+  { label: "Root Cause Analysis",  href: "/root-cause",          icon: GitBranch },
   { label: "Budget Optimizer",     href: "/budget-optimizer",    icon: Sliders },
   { label: "Campaign Optimizer",   href: "/campaigns",           icon: Wand2 },
-  { label: "Growth Ideas",         href: "/growth-ideas",        icon: Sprout },
+  { label: "SEO Optimizer",        href: "/seo-optimizer",       icon: Search },
+  { label: "Creative Optimizer",   href: "/creative-optimizer",  icon: Paintbrush },
+  { label: "Audience Optimizer",   href: "/audience-optimizer",  icon: Users },
 ];
 
 const PLANNING: NavItem[] = [
