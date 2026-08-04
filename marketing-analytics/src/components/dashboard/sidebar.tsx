@@ -27,7 +27,7 @@ interface NavItem { label: string; href: string; icon: React.ElementType; badge?
 
 const DECISION_INTELLIGENCE: NavItem[] = [
   { label: "Executive Summary",    href: "/executive-summary",   icon: FileBarChart },
-  { label: "Ask Captain AI",       href: "/ask",                 icon: Sparkles,   badge: "AI" },
+  { label: "AI Copilot",            href: "/ask",                 icon: Sparkles,   badge: "AI" },
   { label: "Recommendations",      href: "/recommendations",     icon: Lightbulb },
   { label: "Smart Alerts",         href: "/alerts",              icon: Bell },
   { label: "Forecasts",            href: "/forecasts",           icon: TrendingUp },
