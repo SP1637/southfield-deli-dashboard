@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useGA4Property } from "@/hooks/use-ga4-property";
 import { subDays } from "date-fns";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Share2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { FunnelVisualization } from "@/components/dashboard/funnel-visualization";
@@ -19,6 +19,7 @@ import {
 } from "@/lib/demo-data";
 import type { CountryRow } from "@/types";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { SharePanel } from "@/components/dashboard/share-panel";
 
 const COUNTRY_COLUMNS: Column<CountryRow>[] = [
   { key: "country",              label: "Country",       format: "string",   sortable: false },
@@ -35,6 +36,7 @@ const COUNTRY_COLUMNS: Column<CountryRow>[] = [
 export default function CountriesPage() {
   const { data: session } = useSession();
   const [propertyId, setPropertyId] = useGA4Property();
+  const [shareOpen, setShareOpen] = useState(false);
   const [filters, setFilters] = useState<FilterValues>({
     startDate: toGA4DateString(subDays(new Date(), 6)),
     endDate: toGA4DateString(new Date()),
@@ -50,7 +52,18 @@ export default function CountriesPage() {
 
   return (
     <>
-      <PageHeader title="Sales Funnel by Country" />
+      <PageHeader
+        title="Sales Funnel by Country"
+        actions={
+          <button
+            onClick={() => setShareOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </button>
+        }
+      />
       <PageContent>
 
       <FilterBar filters={filters} onChange={setFilters} show={[]} />
@@ -75,6 +88,13 @@ export default function CountriesPage() {
         loading={loading}
       />
       </PageContent>
+
+      {shareOpen && (
+        <SharePanel
+          title="Sales by Country"
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </>
   );
 }

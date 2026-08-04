@@ -191,7 +191,7 @@ const FEATURES: Feature[] = [
   // ── Coming Soon ────────────────────────────────────────────────────────────
   {
     name: "Looker Studio Connector",
-    description: "Push Marketing Intelligence data directly into Looker Studio dashboards",
+    description: "Push Nexoryx One data directly into Looker Studio dashboards",
     status: "coming_soon",
     category: "Integrations",
     icon: Share2,

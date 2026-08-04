@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "The terms and conditions governing your use of Marketing Intelligence.",
+  description: "The terms and conditions governing your use of Nexoryx One.",
 };
 
 const LAST_UPDATED = "28 April 2026";
@@ -22,7 +22,7 @@ export default function TermsPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500">
               <LayoutDashboard className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">Marketing Intelligence</span>
+            <span className="text-lg font-bold text-white">Nexoryx One</span>
           </Link>
           <Link href="/" className="text-sm text-slate-400 hover:text-white transition-colors">
             ← Back to home
@@ -40,15 +40,15 @@ export default function TermsPage() {
         <div className="space-y-10 text-slate-300 leading-relaxed text-sm">
 
           <p>
-            These Terms of Service (&quot;Terms&quot;) govern your access to and use of Marketing Intelligence
-            (&quot;Service&quot;), operated by Marketing Intelligence (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;).
+            These Terms of Service (&quot;Terms&quot;) govern your access to and use of Nexoryx One
+            (&quot;Service&quot;), operated by Nexoryx One (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;).
             By accessing or using the Service you agree to be bound by these Terms.
             If you do not agree, do not use the Service.
           </p>
 
           <Section title="1. Use of the Service">
             <p>
-              Marketing Intelligence provides a marketing analytics dashboard that connects to Google Analytics 4
+              Nexoryx One provides a marketing analytics dashboard that connects to Google Analytics 4
               via a service account. You must be at least 13 years old and have the legal authority
               to enter into these Terms to use the Service.
             </p>
@@ -79,11 +79,11 @@ export default function TermsPage() {
           <Section title="3. Your Data and GA4 Access">
             <p>
               You retain full ownership of your Google Analytics data. By connecting a GA4 property
-              to Marketing Intelligence, you grant us permission to read that property&apos;s data on your behalf
+              to Nexoryx One, you grant us permission to read that property&apos;s data on your behalf
               for the purpose of displaying it in your dashboard.
             </p>
             <p className="mt-3">
-              You can revoke this access at any time by removing the Marketing Intelligence service account from
+              You can revoke this access at any time by removing the Nexoryx One service account from
               your GA4 Admin panel. We do not store your analytics data persistently — it is fetched
               in real time and held in server memory for up to 5 minutes for performance caching only.
             </p>
@@ -91,7 +91,7 @@ export default function TermsPage() {
 
           <Section title="4. Subscription Plans and Billing">
             <p>
-              Marketing Intelligence offers a free Starter plan and paid Pro (£29/month) and Agency (£99/month)
+              Nexoryx One offers a free Starter plan and paid Pro (£29/month) and Agency (£99/month)
               plans. Paid plans are billed monthly via Stripe. All prices are in GBP and exclusive
               of any applicable taxes.
             </p>
@@ -115,7 +115,7 @@ export default function TermsPage() {
 
           <Section title="5. Intellectual Property">
             <p>
-              The Marketing Intelligence name, logo, dashboard design, and all underlying software are our
+              The Nexoryx One name, logo, dashboard design, and all underlying software are our
               exclusive property and are protected by copyright and other intellectual property laws.
               You may not copy, reproduce or create derivative works from any part of the Service
               without our written permission.
@@ -128,7 +128,7 @@ export default function TermsPage() {
 
           <Section title="6. Third-Party Services">
             <p>
-              Marketing Intelligence integrates with third-party services including Google Analytics, Stripe,
+              Nexoryx One integrates with third-party services including Google Analytics, Stripe,
               Resend and Vercel. Your use of these services is governed by their respective terms
               and privacy policies. We are not responsible for the practices of these third parties.
             </p>
@@ -150,7 +150,7 @@ export default function TermsPage() {
 
           <Section title="8. Limitation of Liability">
             <p>
-              To the maximum extent permitted by law, Marketing Intelligence shall not be liable for any
+              To the maximum extent permitted by law, Nexoryx One shall not be liable for any
               indirect, incidental, special, consequential or punitive damages, including loss of
               profits, data, goodwill or business opportunities, arising from or related to your
               use of the Service.
@@ -164,7 +164,7 @@ export default function TermsPage() {
 
           <Section title="9. Indemnification">
             <p>
-              You agree to indemnify and hold harmless Marketing Intelligence and its officers, directors,
+              You agree to indemnify and hold harmless Nexoryx One and its officers, directors,
               employees and agents from any claims, damages, losses or expenses (including
               reasonable legal fees) arising from your use of the Service, your violation of
               these Terms, or your violation of any third-party rights.
@@ -191,7 +191,7 @@ export default function TermsPage() {
           <Section title="12. Contact">
             <p>For any questions about these Terms, please contact us:</p>
             <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-5 space-y-1">
-              <p><strong className="text-white">Marketing Intelligence</strong></p>
+              <p><strong className="text-white">Nexoryx One</strong></p>
               <p>Email: <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-400 hover:underline">{CONTACT_EMAIL}</a></p>
               <p>Website: <a href={APP_URL} className="text-indigo-400 hover:underline">{APP_URL}</a></p>
             </div>
@@ -203,7 +203,7 @@ export default function TermsPage() {
       {/* Footer */}
       <footer className="border-t border-white/10 px-6 py-8 mt-10">
         <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-xs text-slate-600">© 2026 Marketing Intelligence. All rights reserved.</p>
+          <p className="text-xs text-slate-600">© 2026 Nexoryx One. All rights reserved.</p>
           <div className="flex gap-6 text-xs text-slate-500">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="text-indigo-400">Terms of Service</Link>

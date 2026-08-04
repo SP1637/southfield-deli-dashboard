@@ -11,13 +11,13 @@ import { authOptions } from "@/lib/auth";
 
 const PLANS = {
   pro: {
-    name: "Marketing Intelligence Pro",
+    name: "Nexoryx One Pro",
     amount: 2900, // £29.00 in pence
     currency: "gbp",
     interval: "month" as const,
   },
   agency: {
-    name: "Marketing Intelligence Agency",
+    name: "Nexoryx One Agency",
     amount: 9900, // £99.00 in pence
     currency: "gbp",
     interval: "month" as const,

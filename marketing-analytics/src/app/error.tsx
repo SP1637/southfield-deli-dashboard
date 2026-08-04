@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect } from "react"; 
 import { LayoutDashboard, RefreshCw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +13,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // Log to your error tracking service here (e.g. Sentry)
-    console.error("[Marketing Intelligence Error]", error);
+    console.error("[Nexoryx One Error]", error);
   }, [error]);
 
   return (
@@ -43,7 +43,7 @@ export default function GlobalError({
         </Button>
       </div>
 
-      <p className="mt-10 text-xs text-muted-foreground/50">Marketing Intelligence Analytics</p>
+      <p className="mt-10 text-xs text-muted-foreground/50">Nexoryx One Analytics</p>
     </div>
   );
 }

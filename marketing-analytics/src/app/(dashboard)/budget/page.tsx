@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -269,15 +269,23 @@ export default function BudgetPage() {
         {/* Stacked distribution chart */}
         <div className="mt-5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Spend Distribution</p>
-          <ResponsiveContainer width="100%" height={90}>
-            <BarChart data={distData} layout="vertical" margin={{ left: 60, right: 10 }}>
-              <XAxis type="number" tick={{ fontSize: 10 }} hide />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={55} />
-              <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, ""]} />
-              <Bar dataKey="spend"  stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="budget" stackId="a" fill="hsl(var(--muted))" radius={[4, 4, 4, 4]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="space-y-2">
+            {distData.map((row, i) => {
+              const total = row.spend + row.budget;
+              const spendPct = (row.spend / total) * 100;
+              const budgetPct = (row.budget / total) * 100;
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground w-[58px] shrink-0 text-right truncate">{row.name}</span>
+                  <div className="flex flex-1 h-5 rounded overflow-hidden">
+                    <div className="h-full" style={{ width: `${spendPct}%`, backgroundColor: "#8b5cf6" }} />
+                    <div className="h-full bg-muted" style={{ width: `${budgetPct}%` }} />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground w-[56px] shrink-0 text-right">${(row.spend/1000).toFixed(1)}k</span>
+                </div>
+              );
+            })}
+          </div>
           <div className="flex gap-4 text-[10px] text-muted-foreground mt-1">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-violet-500 inline-block" /> Spent</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-muted inline-block" /> Remaining</span>

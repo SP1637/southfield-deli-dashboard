@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, Legend,
 } from "recharts";
-import { Info, Database, Loader2 } from "lucide-react";
+import { Info, Database, Loader2, Share2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCompact, formatCurrency } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { toGA4DateString } from "@/lib/utils";
 import { subDays } from "date-fns";
 import type { ChannelRow } from "@/types";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { SharePanel } from "@/components/dashboard/share-panel";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -142,6 +143,7 @@ const DEMO_CHANNELS: ChannelRow[] = [
 
 export default function AttributionPage() {
   const [model, setModel] = useState<ModelKey>("data_driven");
+  const [shareOpen, setShareOpen] = useState(false);
 
   const [propertyId] = useGA4Property();
 
@@ -224,7 +226,18 @@ export default function AttributionPage() {
 
   return (
     <>
-      <PageHeader title="Attribution Analysis" />
+      <PageHeader
+        title="Attribution Analysis"
+        actions={
+          <button
+            onClick={() => setShareOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </button>
+        }
+      />
       <PageContent>
       {/* Connect banner */}
       {!propertyId && !isLoading && (
@@ -503,6 +516,13 @@ export default function AttributionPage() {
         </CardContent>
       </Card>
       </PageContent>
+
+      {shareOpen && (
+        <SharePanel
+          title="Attribution Analysis"
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </>
   );
 }

@@ -60,7 +60,7 @@ export default function SharePage() {
             This shared dashboard link has expired or is invalid. Ask the owner to generate a new one.
           </p>
           <Link href="/" className="text-sm font-medium text-primary hover:underline">
-            ← Back to Marketing Intelligence
+            ← Back to Nexoryx One
           </Link>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function SharePage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
               <LayoutDashboard className="h-3.5 w-3.5 text-primary-foreground" />
             </div>
-            <span className="text-sm font-bold">Marketing Intelligence</span>
+            <span className="text-sm font-bold">Nexoryx One</span>
             <span className="ml-1 rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
               Read-only
             </span>
@@ -193,3 +193,4 @@ export default function SharePage() {
     </div>
   );
 }
+

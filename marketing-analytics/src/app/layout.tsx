@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Marketing Intelligence — Marketing Analytics",
-    template: "%s · Marketing Intelligence",
+    default: "Nexoryx One — Marketing Analytics",
+    template: "%s · Nexoryx One",
   },
   description:
     "Connect 18+ marketing sources, get AI-written reports, set KPI alerts and share live dashboards. Built for marketing teams, agencies and e-commerce.",
@@ -19,15 +19,15 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
-    siteName: "Marketing Intelligence",
-    title: "Marketing Intelligence — Marketing Analytics",
+    siteName: "Nexoryx One",
+    title: "Nexoryx One — Marketing Analytics",
     description:
       "Connect 18+ marketing sources. AI-written reports. KPI alerts. Built for agencies & e-commerce teams.",
     url: "https://marketing-analytics-self.vercel.app",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Marketing Intelligence — Marketing Analytics",
+    title: "Nexoryx One — Marketing Analytics",
     description: "Connect 18+ marketing sources. AI reports. KPI alerts. Built for agencies & e-commerce teams.",
   },
   metadataBase: new URL(
@@ -71,3 +71,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

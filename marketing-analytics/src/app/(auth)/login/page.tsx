@@ -76,7 +76,7 @@ export default function LoginPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
             <LayoutDashboard className="h-5 w-5" />
           </div>
-          <span className="text-xl font-bold">Marketing Intelligence</span>
+          <span className="text-xl font-bold">Nexoryx One</span>
         </div>
 
         <div className="space-y-8">
@@ -109,7 +109,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs text-primary-foreground/40">
-          © {new Date().getFullYear()} Marketing Intelligence · Secure · No credit card required to start
+          © {new Date().getFullYear()} Nexoryx One · Secure · No credit card required to start
         </p>
       </div>
 
@@ -121,7 +121,7 @@ export default function LoginPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg">
               <LayoutDashboard className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">Marketing Intelligence</span>
+            <span className="text-xl font-bold">Nexoryx One</span>
           </div>
 
           {/* Title + mode toggle */}

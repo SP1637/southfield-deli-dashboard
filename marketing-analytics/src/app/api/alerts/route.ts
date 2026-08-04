@@ -81,12 +81,12 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Marketing Intelligence Alerts <alerts@marketing-intelligence.co>",
+        from: "Nexoryx One Alerts <alerts@marketing-intelligence.co>",
         to: [email],
         subject: `✅ Alert created: ${alert.name}`,
         html: `<p>Your alert "<strong>${alert.name}</strong>" has been set up.</p>
                <p>You'll be notified when <strong>${alert.metric}</strong> goes ${alert.condition.replace("_", " ")} <strong>${alert.threshold}</strong> (${alert.period}).</p>
-               <p style="color:#888;font-size:12px;">Marketing Intelligence Analytics</p>`,
+               <p style="color:#888;font-size:12px;">Nexoryx One Analytics</p>`,
       }),
     }).catch(() => {});
   }

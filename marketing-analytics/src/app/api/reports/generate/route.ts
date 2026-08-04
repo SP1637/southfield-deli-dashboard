@@ -103,7 +103,7 @@ function generateRuleBasedReport(input: ReportInput) {
     },
     {
       heading: "Recommended Next Steps",
-      body: `Based on this ${period} performance, the following actions are recommended for the next 30 days:\n\n• Review and pause the bottom 20% of paid keywords/ad sets by CPA.\n• Implement a re-engagement email sequence for cart abandoners (if not already active).\n• Publish at least two long-form content pieces targeting high-intent keywords.\n• Set up KPI alert thresholds in Marketing Intelligence for conversion rate, sessions, and revenue.\n• Schedule a weekly PDF report to be sent to all stakeholders to maintain alignment.`,
+      body: `Based on this ${period} performance, the following actions are recommended for the next 30 days:\n\n• Review and pause the bottom 20% of paid keywords/ad sets by CPA.\n• Implement a re-engagement email sequence for cart abandoners (if not already active).\n• Publish at least two long-form content pieces targeting high-intent keywords.\n• Set up KPI alert thresholds in Nexoryx One for conversion rate, sessions, and revenue.\n• Schedule a weekly PDF report to be sent to all stakeholders to maintain alignment.`,
     },
   ];
 

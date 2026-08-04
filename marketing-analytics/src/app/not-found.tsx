@@ -34,7 +34,7 @@ export default function NotFound() {
         </Link>
       </div>
 
-      <p className="mt-10 text-xs text-muted-foreground/50">Marketing Intelligence Analytics</p>
+      <p className="mt-10 text-xs text-muted-foreground/50">Nexoryx One Analytics</p>
     </div>
   );
 }

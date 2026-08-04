@@ -19,23 +19,101 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const DASHBOARD_PATHS = [
-  "/overview",
-  "/funnel",
+  // Core
+  "/home",
+  "/ask",
+  // Decision Intelligence
+  "/executive-summary",
+  "/recommendations",
+  "/alerts",
+  "/forecasts",
+  // Business Performance
+  "/executive-dashboard",
+  "/marketing-score",
+  "/revenue-intelligence",
+  "/roi",
   "/attribution",
-  "/countries",
+  "/goals",
+  // Marketing Intelligence
+  "/marketing-overview",
+  "/campaigns",
+  "/channel-performance",
+  "/audience",
+  "/content-performance",
+  "/creative-performance",
+  "/seo",
+  "/overview",
+  "/email-marketing",
+  "/media",
+  "/video-intelligence",
+  "/affiliate",
+  "/ads",
+  "/marketplace",
+  // Revenue Intelligence
+  "/revenue",
+  "/profit",
+  "/margin",
+  "/roas",
+  "/cac",
+  "/revenue-attribution",
+  "/revenue-opportunities",
+  // Customer Intelligence
+  "/customer-journey",
+  "/behaviour",
+  "/retention",
+  "/churn",
+  "/cohorts",
+  "/demographics",
+  "/personas",
+  "/audience",
+  "/acquisition",
+  "/ltv",
+  "/segmentation",
+  // Sales Intelligence
+  "/funnel",
+  "/lead-performance",
+  "/conversion-analysis",
+  "/revenue-pipeline",
   "/items",
-  "/traffic",
+  "/orders",
+  // Competitor Intelligence
+  "/competitors",
+  "/share-of-voice",
+  "/seo-gap",
+  "/keyword-gap",
+  "/ad-library",
+  "/pricing",
+  "/offers",
+  "/competitor-content",
+  "/social-growth",
+  "/reviews",
+  "/market-trends",
+  // AI Decision Center
+  "/opportunities",
+  "/problems",
+  "/predictions",
+  "/budget-optimizer",
+  "/campaigns",
+  "/growth-ideas",
+  // Planning
+  "/campaign-calendar",
+  "/budget",
+  "/objectives",
+  "/forecast-simulator",
+  // Integrations
   "/connect",
+  "/data-sources",
+  "/api-docs",
+  "/settings",
+  // Legacy / misc
+  "/countries",
+  "/traffic",
   "/templates",
   "/reports",
-  "/alerts",
   "/roadmap",
-  "/settings",
-  "/ads",
-  "/media",
   "/web-analytics",
-  "/seo",
-  "/traffic",
+  "/metrics",
+  "/tv",
 ];
 
 const SESSION_COOKIE_PREFIXES = [
@@ -80,7 +158,7 @@ export function middleware(req: NextRequest) {
     if (authed) {
       // Returning client → dashboard  |  new client → onboarding
       return NextResponse.redirect(
-        new URL(hasOnboarded ? "/overview" : "/connect", req.url)
+        new URL(hasOnboarded ? "/home" : "/connect", req.url)
       );
     }
     // Not signed in → show the public landing page
@@ -91,7 +169,7 @@ export function middleware(req: NextRequest) {
   if (pathname === "/login") {
     if (authed) {
       return NextResponse.redirect(
-        new URL(hasOnboarded ? "/overview" : "/connect", req.url)
+        new URL(hasOnboarded ? "/home" : "/connect", req.url)
       );
     }
     return NextResponse.next();

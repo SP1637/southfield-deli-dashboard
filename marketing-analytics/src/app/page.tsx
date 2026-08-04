@@ -192,7 +192,7 @@ function NavBar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500">
             <LayoutDashboard className="h-4 w-4 text-white" />
           </div>
-          <span className="text-lg font-bold text-white">Marketing Intelligence</span>
+          <span className="text-lg font-bold text-white">Nexoryx One</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm text-slate-300">
@@ -536,7 +536,7 @@ export default function LandingPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500">
               <LayoutDashboard className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="text-sm font-bold text-white">Marketing Intelligence</span>
+            <span className="text-sm font-bold text-white">Nexoryx One</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -547,7 +547,7 @@ export default function LandingPage() {
             <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             <Link href="/login" className="hover:text-white transition-colors">Sign in</Link>
           </div>
-          <p className="text-xs text-slate-600">© 2026 Marketing Intelligence. All rights reserved.</p>
+          <p className="text-xs text-slate-600">© 2026 Nexoryx One. All rights reserved.</p>
         </div>
       </footer>
     </div>

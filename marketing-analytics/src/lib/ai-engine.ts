@@ -1,5 +1,5 @@
 /**
- * AI Engine — Central intelligence layer for Marketing Intelligence platform.
+ * AI Engine — Central intelligence layer for Nexoryx One platform.
  *
  * This module analyses campaign performance, detects anomalies, generates
  * fix recommendations, and writes narrative insights. It's the brain behind

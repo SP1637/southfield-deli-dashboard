@@ -35,13 +35,13 @@ export async function POST(req: NextRequest) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: "Marketing Intelligence Reports <onboarding@resend.dev>",
+        from: "Nexoryx One Reports <onboarding@resend.dev>",
         to: email,
-        subject: "✅ Scheduled reports activated — Marketing Intelligence",
+        subject: "✅ Scheduled reports activated — Nexoryx One",
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
             <div style="margin-bottom:24px">
-              <span style="background:#6366f1;color:white;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:600">Marketing Intelligence</span>
+              <span style="background:#6366f1;color:white;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:600">Nexoryx One</span>
             </div>
             <h2 style="font-size:22px;font-weight:700;margin:0 0 8px">Scheduled reports confirmed ✅</h2>
             <p style="color:#64748b;font-size:14px;line-height:1.6;margin:0 0 20px">

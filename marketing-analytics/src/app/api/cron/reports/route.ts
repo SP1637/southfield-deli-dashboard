@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       });
 
       const { error } = await resend.emails.send({
-        from:    "Marketing Intelligence Reports <onboarding@resend.dev>",
+        from:    "Nexoryx One Reports <onboarding@resend.dev>",
         to:      sub.email,
         subject: `Your Weekly Marketing Report · ${startDate} → ${endDate}`,
         html,

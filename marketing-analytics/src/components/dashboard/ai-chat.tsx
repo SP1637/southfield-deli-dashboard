@@ -367,7 +367,7 @@ function getCampaignAnswer(q: string): string {
   }
 
   // Default — general summary
-  return `📊 **Marketing Intelligence Summary:**\n\n• **${CAMPAIGNS.length} campaigns** across 6 platforms\n• **Blended ROAS: ${blendedRoas.toFixed(2)}×** | £${totalSpend.toLocaleString()}/mo spend\n• **${CAMPAIGNS.filter(c=>c.health==="scale").length} campaigns** to scale | **${CAMPAIGNS.filter(c=>c.health==="pause").length}** to pause\n• **Portfolio health: ${health.score}/100** (${health.label})\n\nTop insight: Instagram is **${((CAMPAIGNS.filter(c=>c.placement.includes("Instagram")).reduce((s,c)=>s+c.revenue,0)/CAMPAIGNS.filter(c=>c.placement.includes("Instagram")).reduce((s,c)=>s+c.spend,0)) / (CAMPAIGNS.filter(c=>c.placement.includes("Facebook Feed")).reduce((s,c)=>s+c.revenue,0)/CAMPAIGNS.filter(c=>c.placement.includes("Facebook Feed")).reduce((s,c)=>s+c.spend,0))).toFixed(1)}× more effective than Facebook Feed** at the same budget.\n\nTry: *"How to connect Klaviyo?"*, *"TikTok not working"*, *"Which campaigns should I pause?"*`;
+  return `📊 **Nexoryx One Summary:**\n\n• **${CAMPAIGNS.length} campaigns** across 6 platforms\n• **Blended ROAS: ${blendedRoas.toFixed(2)}×** | £${totalSpend.toLocaleString()}/mo spend\n• **${CAMPAIGNS.filter(c=>c.health==="scale").length} campaigns** to scale | **${CAMPAIGNS.filter(c=>c.health==="pause").length}** to pause\n• **Portfolio health: ${health.score}/100** (${health.label})\n\nTop insight: Instagram is **${((CAMPAIGNS.filter(c=>c.placement.includes("Instagram")).reduce((s,c)=>s+c.revenue,0)/CAMPAIGNS.filter(c=>c.placement.includes("Instagram")).reduce((s,c)=>s+c.spend,0)) / (CAMPAIGNS.filter(c=>c.placement.includes("Facebook Feed")).reduce((s,c)=>s+c.revenue,0)/CAMPAIGNS.filter(c=>c.placement.includes("Facebook Feed")).reduce((s,c)=>s+c.spend,0))).toFixed(1)}× more effective than Facebook Feed** at the same budget.\n\nTry: *"How to connect Klaviyo?"*, *"TikTok not working"*, *"Which campaigns should I pause?"*`;
 }
 
 // ── Simple markdown renderer ──────────────────────────────────────────────────
@@ -400,7 +400,7 @@ export function AIChat() {
   const [msgs, setMsgs]   = useState<Message[]>([{
     id: "init",
     role: "assistant",
-    content: "👋 I'm your **Marketing AI Assistant**. I can help you:\n\n• **Connect any platform** — GA4, Meta, TikTok, Shopify, Klaviyo and more\n• **Fix connector issues** — troubleshoot errors step by step\n• **Analyse campaigns** — ROAS, budgets, what to pause or scale\n• **Navigate the dashboard** — Reports, Alerts, Forecasts, Goals\n\nJust ask naturally — like *'how do I connect Klaviyo?'* or *'my Meta ads won\\'t connect'*.",
+    content: "👋 I'm your **Captain AI**. I can help you:\n\n• **Connect any platform** — GA4, Meta, TikTok, Shopify, Klaviyo and more\n• **Fix connector issues** — troubleshoot errors step by step\n• **Analyse campaigns** — ROAS, budgets, what to pause or scale\n• **Navigate the dashboard** — Reports, Alerts, Forecasts, Goals\n\nJust ask naturally — like *'how do I connect Klaviyo?'* or *'my Meta ads won\\'t connect'*.",
   }]);
   const [input, setInput]   = useState("");
   const [typing, setTyping] = useState(false);
@@ -429,7 +429,7 @@ export function AIChat() {
   }, [typing]);
 
   const reset = () => {
-    setMsgs([{ id: "init", role: "assistant", content: "👋 I'm your **Marketing AI Assistant**. Ask me anything — connecting platforms, fixing issues, campaign performance, or how to use the dashboard." }]);
+    setMsgs([{ id: "init", role: "assistant", content: "👋 I'm your **Captain AI**. Ask me anything — connecting platforms, fixing issues, campaign performance, or how to use the dashboard." }]);
     setTyping(false);
   };
 
@@ -457,7 +457,7 @@ export function AIChat() {
                 <Sparkles className="h-3.5 w-3.5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white leading-tight">Marketing AI</p>
+                <p className="text-sm font-semibold text-white leading-tight">Captain AI</p>
                 <p className="text-[10px] text-white/60">Connectors · Campaigns · Analytics</p>
               </div>
             </div>

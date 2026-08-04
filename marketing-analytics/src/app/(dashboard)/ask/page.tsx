@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Sparkles, Send, User, TrendingUp, TrendingDown, AlertCircle,
@@ -263,6 +264,40 @@ function matchAnswer(q: string): Omit<Message, "id" | "role" | "timestamp"> {
   return CANNED.default;
 }
 
+// ─── Action button → page route map ─────────────────────────────────────────
+const ACTION_ROUTES: Record<string, string> = {
+  // Campaigns / ads
+  "View Campaign Intel":        "/campaigns",
+  "Open Campaign Intel":        "/campaigns",
+  "View All Campaigns":         "/ads",
+  "View All 14 Campaigns":      "/ads",
+  "View Full Campaign Table":    "/ads",
+  "View Full Campaigns":        "/ads",
+  "Pause Facebook Campaigns":   "/campaigns",
+  "Pause High-CPA Ad Sets":     "/campaigns",
+  "View TikTok Campaigns":      "/ads",
+  "View Google Campaigns":      "/ads",
+  // Budget
+  "Open Budget Plan":           "/budget",
+  "View Budget Pacing":         "/budget",
+  "Open Budget Reallocation":   "/budget",
+  "Rebalance Channels":         "/budget",
+  "Move Budget to Instagram":   "/budget",
+  // Platform comparison / meta
+  "See Platform Comparison":    "/campaigns",
+  "See Full Meta Analysis":     "/campaigns",
+  "View Instagram vs Facebook": "/campaigns",
+  "Open Instagram vs Facebook": "/campaigns",
+  // Forecasts / goals / SEO / reports
+  "Open Forecasts":             "/forecasts",
+  "Set Google Ads Goal":        "/goals",
+  "Set CPA Goals":              "/goals",
+  "View SEO Dashboard":         "/seo",
+  "Open Quick-win Keywords":    "/seo",
+  "Set Organic Goal":           "/goals",
+  "See 4-Week Action Plan":     "/reports",
+};
+
 // ─── Proactive insight cards ──────────────────────────────────────────────────
 const PROACTIVE = [
   { icon: TrendingUp,   color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", title: "Instagram > Facebook right now", body: "Instagram Feed is at 5.2× ROAS and growing. Facebook Feed is at 1.8× and declining. Move £3,000/month to Instagram — estimated +£9,000 additional revenue." },
@@ -309,8 +344,18 @@ function MiniChart({ chart }: { chart: ChartData }) {
   );
 }
 
-function ChatMessage({ msg }: { msg: Message }) {
+function ChatMessage({ msg, onAction }: { msg: Message; onAction?: (q: string) => void }) {
+  const router = useRouter();
   const isAI = msg.role === "ai";
+
+  function handleAction(label: string) {
+    const route = ACTION_ROUTES[label];
+    if (route) {
+      router.push(route);
+    } else {
+      onAction?.(label);
+    }
+  }
   return (
     <div className={cn("flex gap-3", isAI ? "justify-start" : "justify-end")}>
       {isAI && (
@@ -340,7 +385,11 @@ function ChatMessage({ msg }: { msg: Message }) {
         {isAI && msg.actions && (
           <div className="flex flex-wrap gap-2 mt-3">
             {msg.actions.map((a, i) => (
-              <button key={i} className="flex items-center gap-1 text-xs font-medium text-primary border border-primary/30 rounded-full px-3 py-1 hover:bg-primary/10 transition-colors">
+              <button
+                key={i}
+                onClick={() => handleAction(a)}
+                className="flex items-center gap-1 text-xs font-medium text-primary border border-primary/30 rounded-full px-3 py-1 hover:bg-primary/10 active:scale-95 transition-all cursor-pointer"
+              >
                 {a} <ChevronRight className="h-3 w-3" />
               </button>
             ))}
@@ -519,7 +568,7 @@ export default function AskPage() {
         <div className="flex-1 flex flex-col min-h-0 rounded-xl border border-border bg-card overflow-hidden">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg) => <ChatMessage key={msg.id} msg={msg} />)}
+            {messages.map((msg) => <ChatMessage key={msg.id} msg={msg} onAction={sendMessage} />)}
             {loading && (
               <div className="flex gap-3 justify-start">
                 <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center shrink-0">
