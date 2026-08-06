@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/ads/google?startDate=&endDate=&customerId=
  *
  * Fetches Google Ads campaign performance via the Google Ads API.
@@ -15,6 +15,7 @@
  *   GOOGLE_ADS_CUSTOMER_ID       — still required
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { buildCacheKey, getCached, setCache } from "@/lib/ga4/client";
@@ -39,7 +40,9 @@ export interface AdCampaign {
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
   const startDate  = searchParams.get("startDate") ?? "30daysAgo";

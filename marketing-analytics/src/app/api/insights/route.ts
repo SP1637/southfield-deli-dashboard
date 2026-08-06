@@ -1,10 +1,11 @@
-/**
+﻿/**
  * POST /api/insights
  * Generates smart, rule-based marketing insights from KPI data.
  * If ANTHROPIC_API_KEY or OPENAI_API_KEY is set, uses AI — otherwise
  * falls back to deterministic rule-based insights that look just as good.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -86,7 +87,9 @@ function generateInsights(kpis: KpiInput): string[] {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const kpis: KpiInput = body.kpis ?? {};

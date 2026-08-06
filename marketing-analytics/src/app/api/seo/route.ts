@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/seo?siteUrl=&startDate=&endDate=
  *
  * Fetches Google Search Console data using the same service account
@@ -8,13 +8,16 @@
  * Returns: summary KPIs, top queries, top pages, device breakdown, country breakdown
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { buildCacheKey, getCached, setCache } from "@/lib/ga4/client";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
   const siteUrl   = searchParams.get("siteUrl")   ?? process.env.SEARCH_CONSOLE_SITE_URL;

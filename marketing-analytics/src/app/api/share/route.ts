@@ -1,4 +1,4 @@
-/**
+﻿/**
  * POST /api/share  — generate a signed shareable dashboard link
  * GET  /api/share?token=  — validate a share token
  *
@@ -7,6 +7,7 @@
  * No database needed — the token itself is the state.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -40,14 +41,16 @@ function verify(token: string): object | null {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const { propertyId = "", expiryDays = 30 } = body;
 
   const payload = {
     propertyId,
-    createdBy: session.user?.email ?? "unknown",
+    createdBy: session?.user?.email ?? "demo-user",
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + expiryDays * 86400,
   };

@@ -1,10 +1,11 @@
-/**
+﻿/**
  * GET /api/ads/status
  *
  * Returns which ad platforms are connected and how (oauth token vs env vars).
  * Used by the connect page and ads page to show real connection state.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { readToken } from "@/lib/token-store";
@@ -54,7 +55,9 @@ const PLATFORM_ENV_CHECKS: Record<string, { token?: string; required: string[] }
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const statuses: Record<string, {
     connected: boolean;

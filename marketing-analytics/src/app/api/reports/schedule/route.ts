@@ -1,4 +1,4 @@
-/**
+﻿/**
  * POST /api/reports/schedule
  * Saves the user's scheduled report preference (frequency + recipient).
  * Stored in a simple env-var-backed in-memory map (or localStorage on client).
@@ -9,6 +9,7 @@
  * Body: { frequency: "weekly" | "monthly", email: string, enabled: boolean }
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Resend } from "resend";
@@ -18,16 +19,18 @@ const scheduleStore = new Map<string, { frequency: string; email: string; enable
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { frequency = "weekly", email = session.user?.email, enabled = true } = body;
+  const { frequency = "weekly", email = session?.user?.email, enabled = true } = body;
 
   if (!["weekly", "monthly"].includes(frequency)) {
     return NextResponse.json({ error: "frequency must be weekly or monthly" }, { status: 400 });
   }
 
-  const userEmail = session.user?.email ?? "unknown";
+  const userEmail = session?.user?.email ?? "demo-user";
   scheduleStore.set(userEmail, { frequency, email, enabled });
 
   // Send a confirmation email if Resend is configured
@@ -74,9 +77,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userEmail = session.user?.email ?? "unknown";
+  const userEmail = session?.user?.email ?? "demo-user";
   const prefs = scheduleStore.get(userEmail) ?? null;
   return NextResponse.json({ prefs });
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/ga4/items?propertyId=&startDate=&endDate=&itemName=
  *
  * Returns:
@@ -7,6 +7,7 @@
  *  - Item table rows
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { buildCacheKey, getCached, setCache } from "@/lib/ga4/client";
@@ -15,7 +16,9 @@ import { transformItemRows, transformTimeSeries } from "@/lib/ga4/transformers";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = await cookies();
+  const isDemoMode  = cookieStore.has("nexoryx_demo");
+  if (!session && !isDemoMode) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
   const propertyId = searchParams.get("propertyId") ?? process.env.GA4_PROPERTY_ID;
@@ -28,6 +31,10 @@ export async function GET(req: NextRequest) {
   const cacheKey = buildCacheKey("items", { propertyId, startDate, endDate, itemName });
   const cached = getCached(cacheKey);
   if (cached) return NextResponse.json({ data: cached, cached: true, fetchedAt: new Date().toISOString() });
+
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    return NextResponse.json({ demo: true, cached: false, fetchedAt: new Date().toISOString() });
+  }
 
   const property = `properties/${propertyId}`;
   const client = buildGA4Client();
@@ -107,6 +114,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data: result, cached: false, fetchedAt: new Date().toISOString() });
   } catch (err: any) {
     console.error("[GA4 Items]", err.message);
-    return NextResponse.json({ error: err.message ?? "GA4 API error" }, { status: 500 });
+    return NextResponse.json({ demo: true, error: err.message, fetchedAt: new Date().toISOString() });
   }
 }
