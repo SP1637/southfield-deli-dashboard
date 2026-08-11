@@ -1,0 +1,100 @@
+"use client";
+
+import { useState } from "react";
+import { useGA4Property } from "@/hooks/use-ga4-property";
+import { subDays } from "date-fns";
+import { RefreshCw, Share2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { FunnelVisualization } from "@/components/dashboard/funnel-visualization";
+import { TimeSeriesChart } from "@/components/dashboard/time-series-chart";
+import { DataTable, type Column } from "@/components/dashboard/data-table";
+import { FilterBar, type FilterValues } from "@/components/dashboard/filter-bar";
+import { PropertySelector } from "@/components/dashboard/property-selector";
+import { useGA4Countries } from "@/hooks/use-ga4-countries";
+import { toGA4DateString } from "@/lib/utils";
+import {
+  DEMO_COUNTRY_KPIS, DEMO_COUNTRY_FUNNEL_STEPS,
+  DEMO_COUNTRY_TIMESERIES, DEMO_COUNTRY_ROWS,
+} from "@/lib/demo-data";
+import type { CountryRow } from "@/types";
+import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { SharePanel } from "@/components/dashboard/share-panel";
+
+const COUNTRY_COLUMNS: Column<CountryRow>[] = [
+  { key: "country",              label: "Country",       format: "string",   sortable: false },
+  { key: "totalUsers",           label: "Total Users",   format: "number" },
+  { key: "newUsers",             label: "New Users",     format: "number" },
+  { key: "pageViews",            label: "Page Views",    format: "number" },
+  { key: "addsToCart",           label: "Adds to Cart",  format: "number" },
+  { key: "checkouts",            label: "Checkouts",     format: "number" },
+  { key: "paymentInfoAdds",      label: "Payment Info",  format: "number" },
+  { key: "purchases",            label: "Purchases",     format: "number" },
+  { key: "grossPurchaseRevenue", label: "Revenue",       format: "currency" },
+];
+
+export default function CountriesPage() {
+  const { data: session } = useSession();
+  const [propertyId, setPropertyId] = useGA4Property();
+  const [shareOpen, setShareOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterValues>({
+    startDate: toGA4DateString(subDays(new Date(), 6)),
+    endDate: toGA4DateString(new Date()),
+  });
+
+  const ga4 = useGA4Countries({ ...filters, propertyId });
+  const isDemo = !session || ga4.isError || !ga4.data;
+  const kpis        = ga4.data?.data.kpis        ?? DEMO_COUNTRY_KPIS;
+  const funnelSteps = DEMO_COUNTRY_FUNNEL_STEPS; // computed from table data
+  const timeSeries  = ga4.data?.data.timeSeries  ?? DEMO_COUNTRY_TIMESERIES;
+  const countryRows = ga4.data?.data.countryRows ?? DEMO_COUNTRY_ROWS;
+  const loading     = ga4.isLoading && !!session;
+
+  return (
+    <>
+      <PageHeader
+        title="Sales Funnel by Country"
+        actions={
+          <button
+            onClick={() => setShareOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </button>
+        }
+      />
+      <PageContent>
+
+      <FilterBar filters={filters} onChange={setFilters} show={[]} />
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <KpiCard label="Total Users"           value={kpis.totalUsers}           delta={kpis.totalUsersDelta}           loading={loading} comparisonLabel="from previous week" />
+        <KpiCard label="Purchases"             value={kpis.purchases}             delta={kpis.purchasesDelta}             loading={loading} comparisonLabel="from previous week" />
+        <KpiCard label="Total Purchasers"      value={kpis.totalPurchasers}      delta={kpis.totalPurchasersDelta}      loading={loading} comparisonLabel="from previous week" />
+        <KpiCard label="First-Time Purchasers" value={kpis.firstTimePurchasers}  delta={kpis.firstTimePurchasersDelta}  loading={loading} comparisonLabel="from previous week" />
+        <KpiCard label="Gross Revenue"         value={kpis.grossPurchaseRevenue} delta={kpis.grossPurchaseRevenueDelta} format="currency" loading={loading} comparisonLabel="from previous week" />
+      </div>
+
+      <FunnelVisualization steps={funnelSteps} loading={loading} />
+
+      <TimeSeriesChart title="Dynamics by Country — Page Views" data={timeSeries} color="#10b981" loading={loading} />
+
+      <DataTable<CountryRow>
+        title="Country Performance"
+        columns={COUNTRY_COLUMNS}
+        rows={countryRows}
+        defaultSortKey="totalUsers"
+        loading={loading}
+      />
+      </PageContent>
+
+      {shareOpen && (
+        <SharePanel
+          title="Sales by Country"
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </>
+  );
+}
