@@ -38,8 +38,8 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProvider> = {
     name: "Google Analytics 4",
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
-    clientIdEnv: "GOOGLE_CLIENT_ID",
-    clientSecretEnv: "GOOGLE_CLIENT_SECRET",
+    clientIdEnv: "GA4_CLIENT_ID",
+    clientSecretEnv: "GA4_CLIENT_SECRET",
     scopes: [
       "https://www.googleapis.com/auth/analytics.readonly",
       "https://www.googleapis.com/auth/analytics",
