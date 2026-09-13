@@ -22,6 +22,7 @@ import {
 import type { ChannelRow } from "@/types";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { SharePanel } from "@/components/dashboard/share-panel";
+import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
 
 const CHANNEL_COLUMNS: Column<ChannelRow>[] = [
   { key: "sourceMedium",         label: "Source / Medium",   format: "string",   sortable: false },
@@ -110,10 +111,11 @@ export default function FunnelPage() {
       <PageHeader
         title="Sales Funnel"
         tabs={[
-          { key: "overview",   label: "Overview" },
-          { key: "device",     label: "By Device" },
-          { key: "campaign",   label: "By Campaign" },
-          { key: "org-vs-paid",label: "Organic vs Paid" },
+          { key: "overview",    label: "Overview" },
+          { key: "device",      label: "By Device" },
+          { key: "campaign",    label: "By Campaign" },
+          { key: "org-vs-paid", label: "Organic vs Paid" },
+          { key: "conversion",  label: "Conversion Analysis" },
         ]}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -455,6 +457,8 @@ export default function FunnelPage() {
           </Card>
         </div>
       )}
+
+      {activeTab === "conversion" && <DemoPageTemplate title="Conversion Analysis" section="Funnel" />}
 
       </PageContent>
 

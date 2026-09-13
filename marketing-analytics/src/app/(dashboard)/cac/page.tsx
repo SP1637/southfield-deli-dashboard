@@ -1,4 +1,2 @@
-﻿import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
-export default function Page() {
-  return <DemoPageTemplate title="CAC" section="Revenue Intelligence" />;
-}
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/revenue-roi"); }

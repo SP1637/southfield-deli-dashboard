@@ -6,7 +6,17 @@ import {
   BarChart3, Zap, AlertCircle, CheckCircle2,
 } from "lucide-react";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
 import { cn } from "@/lib/utils";
+
+type ForecastTab = "revenue" | "leads" | "spend" | "demand" | "trends";
+const FORECAST_TABS: { id: ForecastTab; label: string }[] = [
+  { id: "revenue", label: "Revenue" },
+  { id: "leads",   label: "Leads" },
+  { id: "spend",   label: "Spend" },
+  { id: "demand",  label: "Demand" },
+  { id: "trends",  label: "Trends" },
+];
 import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine, Legend,
@@ -171,7 +181,7 @@ function ForecastCard({ metric, active, onClick }: { metric: ForecastMetric; act
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-export default function ForecastsPage() {
+function RevenueForecastContent() {
   const [activeMetric, setActiveMetric] = useState<string>("roas");
   const [activeScenario, setActiveScenario] = useState<number>(1);
 
@@ -179,12 +189,6 @@ export default function ForecastsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Forecasts"
-        tabs={[{ key: "saved", label: "Saved Forecasts" }, { key: "modeling", label: "Forecast Modeling" }]}
-        activeTab="saved"
-      />
-      <PageContent>
 
       {/* AI Insights */}
       <div className="rounded-xl border border-violet-200 dark:border-violet-800/40 bg-violet-50 dark:bg-violet-950/20 p-4">
@@ -314,6 +318,39 @@ export default function ForecastsPage() {
         </div>
       </div>
 
+    </>
+  );
+}
+
+export default function ForecastsPage() {
+  const [tab, setTab] = useState<ForecastTab>("revenue");
+
+  return (
+    <>
+      <PageHeader title="Forecasts" />
+      <PageContent>
+        <div className="flex gap-1 border-b overflow-x-auto">
+          {FORECAST_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0",
+                tab === t.id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "revenue" && <RevenueForecastContent />}
+        {tab === "leads"   && <DemoPageTemplate title="Lead Forecasts"   section="Forecasts" />}
+        {tab === "spend"   && <DemoPageTemplate title="Spend Forecasts"  section="Forecasts" />}
+        {tab === "demand"  && <DemoPageTemplate title="Demand Forecast"  section="Forecasts" />}
+        {tab === "trends"  && <DemoPageTemplate title="Predictive Trends" section="Forecasts" />}
       </PageContent>
     </>
   );

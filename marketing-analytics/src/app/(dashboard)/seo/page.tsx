@@ -14,6 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatCompact } from "@/lib/utils";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
+
+type SeoTab = "overview" | "seo-gap" | "keyword-gap";
+const SEO_TABS: { id: SeoTab; label: string }[] = [
+  { id: "overview",    label: "Overview" },
+  { id: "seo-gap",     label: "SEO Gap" },
+  { id: "keyword-gap", label: "Keyword Gap" },
+];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -156,7 +164,7 @@ const DATE_OPTIONS = [
   { label: "Last 90 days", value: "90daysAgo" },
 ];
 
-export default function SeoPage() {
+function SeoOverviewContent() {
   const [range, setRange] = useState("28daysAgo");
   const [data, setData]   = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -198,8 +206,6 @@ export default function SeoPage() {
 
   return (
     <>
-      <PageHeader title="SEO — Search Console" />
-      <PageContent>
 
         <div className="flex items-center gap-2 flex-wrap">
           {isDemo && (
@@ -464,6 +470,37 @@ export default function SeoPage() {
           )}
         </>
       )}
+    </>
+  );
+}
+
+export default function SeoPage() {
+  const [seoTab, setSeoTab] = useState<SeoTab>("overview");
+
+  return (
+    <>
+      <PageHeader title="SEO" />
+      <PageContent>
+        <div className="flex gap-1 border-b overflow-x-auto">
+          {SEO_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setSeoTab(t.id)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0",
+                seoTab === t.id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {seoTab === "overview"    && <SeoOverviewContent />}
+        {seoTab === "seo-gap"     && <DemoPageTemplate title="SEO Gap Analysis"  section="SEO" />}
+        {seoTab === "keyword-gap" && <DemoPageTemplate title="Keyword Gap"       section="SEO" />}
       </PageContent>
     </>
   );

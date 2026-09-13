@@ -1,4 +1,2 @@
-﻿import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
-export default function Page() {
-  return <DemoPageTemplate title="Seasonality" section="Forecast Intelligence" />;
-}
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/forecasts"); }

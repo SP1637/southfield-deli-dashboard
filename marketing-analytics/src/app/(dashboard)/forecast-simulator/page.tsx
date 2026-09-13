@@ -1,4 +1,2 @@
-﻿import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
-export default function Page() {
-  return <DemoPageTemplate title="Forecast Simulator" section="Planning" />;
-}
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/forecasts"); }

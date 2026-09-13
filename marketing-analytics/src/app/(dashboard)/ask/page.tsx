@@ -255,7 +255,7 @@ export default function AskPage() {
   return (
     <>
       <PageHeader
-        title="AI Copilot"
+        title="Captain AI"
         actions={
           hasMessages ? (
             <button

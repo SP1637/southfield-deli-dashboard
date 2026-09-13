@@ -1,13 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Megaphone, Calculator, Calendar, Rocket, Flag, Target,
   BarChart3, Sliders, ArrowRight, CheckCircle2, Clock,
-  TrendingUp, ChevronRight, Layers,
+  ChevronRight, Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { DemoPageTemplate } from "@/components/dashboard/demo-page-template";
+
+type Tab = "hub" | "objectives" | "okrs" | "quarter" | "launch";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "hub",        label: "Planning Hub" },
+  { id: "objectives", label: "Objectives" },
+  { id: "okrs",       label: "OKRs" },
+  { id: "quarter",    label: "Quarter Planning" },
+  { id: "launch",     label: "Launch Planner" },
+];
 
 const MODULES = [
   { label: "Campaign Planner",   href: "/campaign-planner",   icon: Megaphone,  color: "text-primary",      status: "Active",    count: "3 campaigns" },
@@ -45,11 +57,9 @@ const TYPE_COLORS: Record<string, string> = {
   Budget:   "bg-emerald-500/10 text-emerald-600",
 };
 
-export default function PlanningPage() {
+function PlanningHub() {
   return (
     <>
-      <PageHeader title="Planning" />
-      <PageContent>
 
         {/* ── Hero ── */}
         <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4 flex items-start gap-3">
@@ -170,6 +180,39 @@ export default function PlanningPage() {
           </div>
         </div>
 
+    </>
+  );
+}
+
+export default function PlanningPage() {
+  const [tab, setTab] = useState<Tab>("hub");
+
+  return (
+    <>
+      <PageHeader title="Planning" />
+      <PageContent>
+        <div className="flex gap-1 border-b overflow-x-auto">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0",
+                tab === t.id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "hub"        && <PlanningHub />}
+        {tab === "objectives" && <DemoPageTemplate title="Objectives"       section="Planning" />}
+        {tab === "okrs"       && <DemoPageTemplate title="OKRs"             section="Planning" />}
+        {tab === "quarter"    && <DemoPageTemplate title="Quarter Planning"  section="Planning" />}
+        {tab === "launch"     && <DemoPageTemplate title="Launch Planner"   section="Planning" />}
       </PageContent>
     </>
   );
