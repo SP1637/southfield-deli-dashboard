@@ -2,25 +2,36 @@
 
 import { useState } from "react";
 import {
-  ChevronRight, CheckCircle2, AlertTriangle,
-  Search, Plug, RefreshCw, Wifi, Zap, Loader2, X,
+  ChevronRight, CheckCircle2,
+  Search, Plug, Wifi, Zap, Loader2, X, Key, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { useIntegrations } from "@/hooks/use-integrations";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+type AuthType = "oauth" | "api_key" | "api_key_woocommerce";
+
 interface Platform {
   name: string;
-  providerId?: string;  // matches OAUTH_PROVIDERS key — undefined = no OAuth yet
+  providerId?: string;
+  authType?: AuthType;
+  keyLabel?: string;   // label shown in the API key input modal
+  keyHint?: string;    // placeholder hint for the key
+  docsUrl?: string;    // link to "how to get your API key"
 }
 interface Category { emoji: string; label: string; description: string; platforms: Platform[] }
 
-// ── Provider ID → OAuth path mapping ─────────────────────────────────────────
-// These are the platforms with real OAuth flows built in /api/connect/[provider]
-const SUPPORTED_PROVIDERS = new Set([
-  "google_ads", "meta_ads", "shopify", "linkedin_ads",
+// ── Provider sets ─────────────────────────────────────────────────────────────
+const OAUTH_PROVIDERS = new Set([
+  "ga4", "google_ads", "meta_ads", "shopify", "linkedin_ads",
   "tiktok_ads", "pinterest_ads", "snapchat_ads", "bing_ads", "salesforce",
+]);
+const API_KEY_PROVIDERS = new Set([
+  "klaviyo", "mailchimp", "hubspot", "activecampaign", "woocommerce",
+  "google_search_console", "youtube", "twitter_ads", "reddit_ads",
+  "mixpanel", "amplitude", "segment", "hotjar", "stripe",
+  "bigcommerce", "brevo", "drip", "intercom", "pipedrive", "zoho_crm",
 ]);
 
 // ── Platform data ─────────────────────────────────────────────────────────────
@@ -28,15 +39,15 @@ const CATEGORIES: Category[] = [
   {
     emoji: "📢", label: "Advertising", description: "Paid campaign performance and attribution.",
     platforms: [
-      { name: "Google Ads",       providerId: "google_ads" },
-      { name: "Meta Ads",         providerId: "meta_ads" },
-      { name: "Microsoft Ads",    providerId: "bing_ads" },
-      { name: "TikTok Ads",       providerId: "tiktok_ads" },
-      { name: "LinkedIn Ads",     providerId: "linkedin_ads" },
-      { name: "Pinterest Ads",    providerId: "pinterest_ads" },
-      { name: "Snapchat Ads",     providerId: "snapchat_ads" },
-      { name: "X Ads" },
-      { name: "Reddit Ads" },
+      { name: "Google Ads",       providerId: "google_ads",   authType: "oauth" },
+      { name: "Meta Ads",         providerId: "meta_ads",     authType: "oauth" },
+      { name: "Microsoft Ads",    providerId: "bing_ads",     authType: "oauth" },
+      { name: "TikTok Ads",       providerId: "tiktok_ads",   authType: "oauth" },
+      { name: "LinkedIn Ads",     providerId: "linkedin_ads", authType: "oauth" },
+      { name: "Pinterest Ads",    providerId: "pinterest_ads",authType: "oauth" },
+      { name: "Snapchat Ads",     providerId: "snapchat_ads", authType: "oauth" },
+      { name: "X Ads",            providerId: "twitter_ads",  authType: "api_key", keyLabel: "Bearer Token", keyHint: "AAAA…", docsUrl: "https://developer.twitter.com/en/docs/authentication/oauth-2-0/bearer-tokens" },
+      { name: "Reddit Ads",       providerId: "reddit_ads",   authType: "api_key", keyLabel: "API Key",      keyHint: "your-reddit-api-key" },
       { name: "Amazon Ads" },
       { name: "DV360" },
       { name: "The Trade Desk" },
@@ -48,27 +59,29 @@ const CATEGORIES: Category[] = [
   {
     emoji: "🌐", label: "Website & Analytics", description: "Website traffic and user behaviour.",
     platforms: [
-      { name: "Google Analytics 4",       providerId: "ga4" },
+      { name: "Google Analytics 4",       providerId: "ga4",                   authType: "oauth" },
+      { name: "Google Search Console",    providerId: "google_search_console",  authType: "api_key", keyLabel: "Verified Site URL", keyHint: "https://example.com", docsUrl: "https://search.google.com/search-console" },
+      { name: "Hotjar",                   providerId: "hotjar",                 authType: "api_key", keyLabel: "API Key", keyHint: "hjk_…", docsUrl: "https://help.hotjar.com/hc/en-us/articles/115009336727" },
+      { name: "Mixpanel",                 providerId: "mixpanel",               authType: "api_key", keyLabel: "Project Token", keyHint: "your-project-token" },
+      { name: "Amplitude",                providerId: "amplitude",              authType: "api_key", keyLabel: "API Key", keyHint: "your-amplitude-api-key" },
+      { name: "Segment",                  providerId: "segment",                authType: "api_key", keyLabel: "Write Key", keyHint: "your-segment-write-key" },
       { name: "Google Tag Manager" },
-      { name: "Google Search Console" },
       { name: "Microsoft Clarity" },
-      { name: "Hotjar" },
       { name: "Adobe Analytics" },
       { name: "Cloudflare Web Analytics" },
       { name: "Plausible" },
       { name: "Matomo" },
-      { name: "Mixpanel" },
-      { name: "Amplitude" },
+      { name: "PostHog" },
     ],
   },
   {
     emoji: "🔍", label: "SEO Intelligence", description: "Organic search visibility.",
     platforms: [
+      { name: "Google Search Console", providerId: "google_search_console", authType: "api_key", keyLabel: "Verified Site URL", keyHint: "https://example.com" },
       { name: "SEMrush" },
       { name: "Ahrefs" },
       { name: "Moz" },
       { name: "Screaming Frog" },
-      { name: "Google Search Console" },
       { name: "Majestic" },
       { name: "BrightEdge" },
       { name: "Conductor" },
@@ -79,12 +92,12 @@ const CATEGORIES: Category[] = [
   {
     emoji: "📱", label: "Social Media", description: "Organic social performance.",
     platforms: [
+      { name: "YouTube",      providerId: "youtube",    authType: "api_key", keyLabel: "Channel ID", keyHint: "UCxxxxxxxxxxxxxxxxxxxxxx", docsUrl: "https://support.google.com/youtube/answer/3250431" },
       { name: "Facebook Pages" },
       { name: "Instagram" },
       { name: "LinkedIn" },
       { name: "TikTok" },
       { name: "X (Twitter)" },
-      { name: "YouTube" },
       { name: "Pinterest" },
       { name: "Threads" },
       { name: "Reddit" },
@@ -93,14 +106,15 @@ const CATEGORIES: Category[] = [
   {
     emoji: "📩", label: "Email Marketing", description: "Email campaigns and automation.",
     platforms: [
-      { name: "Mailchimp" },
-      { name: "Klaviyo" },
-      { name: "Brevo" },
+      { name: "Klaviyo",          providerId: "klaviyo",       authType: "api_key", keyLabel: "Private API Key", keyHint: "pk_…", docsUrl: "https://developers.klaviyo.com/en/reference/api_overview" },
+      { name: "Mailchimp",        providerId: "mailchimp",     authType: "api_key", keyLabel: "API Key", keyHint: "xxxx-us1", docsUrl: "https://mailchimp.com/help/about-api-keys/" },
+      { name: "Brevo",            providerId: "brevo",         authType: "api_key", keyLabel: "API Key", keyHint: "xkeysib-…" },
+      { name: "ActiveCampaign",   providerId: "activecampaign",authType: "api_key", keyLabel: "API Key", keyHint: "your-activecampaign-key" },
+      { name: "Drip",             providerId: "drip",          authType: "api_key", keyLabel: "API Token", keyHint: "your-drip-token" },
       { name: "Campaign Monitor" },
       { name: "Constant Contact" },
       { name: "MailerLite" },
-      { name: "HubSpot Email" },
-      { name: "ActiveCampaign" },
+      { name: "HubSpot Email",   providerId: "hubspot",       authType: "api_key", keyLabel: "Private App Token", keyHint: "pat-na1-…", docsUrl: "https://developers.hubspot.com/docs/api/private-apps" },
       { name: "Omnisend" },
       { name: "ConvertKit" },
     ],
@@ -108,10 +122,10 @@ const CATEGORIES: Category[] = [
   {
     emoji: "🛒", label: "Ecommerce", description: "Sales and product data.",
     platforms: [
-      { name: "Shopify",              providerId: "shopify" },
-      { name: "WooCommerce" },
+      { name: "Shopify",     providerId: "shopify",     authType: "oauth" },
+      { name: "WooCommerce", providerId: "woocommerce", authType: "api_key_woocommerce" },
+      { name: "BigCommerce", providerId: "bigcommerce", authType: "api_key", keyLabel: "API Key", keyHint: "your-bigcommerce-api-key" },
       { name: "Magento" },
-      { name: "BigCommerce" },
       { name: "Squarespace Commerce" },
       { name: "Wix Stores" },
       { name: "Ecwid" },
@@ -122,10 +136,11 @@ const CATEGORIES: Category[] = [
   {
     emoji: "👥", label: "CRM & Sales", description: "Lead and customer intelligence.",
     platforms: [
-      { name: "HubSpot CRM" },
-      { name: "Salesforce",  providerId: "salesforce" },
-      { name: "Zoho CRM" },
-      { name: "Pipedrive" },
+      { name: "HubSpot CRM",  providerId: "hubspot",   authType: "api_key", keyLabel: "Private App Token", keyHint: "pat-na1-…", docsUrl: "https://developers.hubspot.com/docs/api/private-apps" },
+      { name: "Salesforce",   providerId: "salesforce",authType: "oauth" },
+      { name: "Pipedrive",    providerId: "pipedrive", authType: "api_key", keyLabel: "API Token", keyHint: "your-pipedrive-token", docsUrl: "https://pipedrive.readme.io/docs/how-to-find-the-api-token" },
+      { name: "Zoho CRM",     providerId: "zoho_crm",  authType: "api_key", keyLabel: "API Key", keyHint: "your-zoho-api-key" },
+      { name: "Intercom",     providerId: "intercom",  authType: "api_key", keyLabel: "Access Token", keyHint: "your-intercom-token", docsUrl: "https://developers.intercom.com/building-apps/docs/authentication-types" },
       { name: "Monday CRM" },
       { name: "Freshsales" },
       { name: "Copper" },
@@ -141,7 +156,7 @@ const CATEGORIES: Category[] = [
       { name: "Gravity Forms" },
       { name: "WPForms" },
       { name: "Google Forms" },
-      { name: "HubSpot Forms" },
+      { name: "HubSpot Forms", providerId: "hubspot", authType: "api_key", keyLabel: "Private App Token", keyHint: "pat-na1-…" },
       { name: "Unbounce" },
       { name: "Leadpages" },
     ],
@@ -149,7 +164,7 @@ const CATEGORIES: Category[] = [
   {
     emoji: "💳", label: "Revenue & Finance", description: "Revenue attribution and financial data.",
     platforms: [
-      { name: "Stripe" },
+      { name: "Stripe",     providerId: "stripe", authType: "api_key", keyLabel: "Restricted API Key", keyHint: "rk_live_…", docsUrl: "https://stripe.com/docs/keys" },
       { name: "PayPal" },
       { name: "QuickBooks" },
       { name: "Xero" },
@@ -171,7 +186,7 @@ const CATEGORIES: Category[] = [
   {
     emoji: "📈", label: "Customer Success", description: "Customer retention and support.",
     platforms: [
-      { name: "Intercom" },
+      { name: "Intercom",    providerId: "intercom",  authType: "api_key", keyLabel: "Access Token", keyHint: "your-intercom-token" },
       { name: "Zendesk" },
       { name: "Freshdesk" },
       { name: "Help Scout" },
@@ -181,8 +196,9 @@ const CATEGORIES: Category[] = [
   {
     emoji: "📊", label: "Product Analytics", description: "Product usage and behaviour.",
     platforms: [
-      { name: "Mixpanel" },
-      { name: "Amplitude" },
+      { name: "Mixpanel",  providerId: "mixpanel",  authType: "api_key", keyLabel: "Project Token", keyHint: "your-project-token" },
+      { name: "Amplitude", providerId: "amplitude", authType: "api_key", keyLabel: "API Key", keyHint: "your-amplitude-api-key" },
+      { name: "Segment",   providerId: "segment",   authType: "api_key", keyLabel: "Write Key", keyHint: "your-segment-write-key" },
       { name: "Heap" },
       { name: "PostHog" },
       { name: "Pendo" },
@@ -196,13 +212,13 @@ const CATEGORIES: Category[] = [
       { name: "Hyros" },
       { name: "Northbeam" },
       { name: "Rockerbox" },
-      { name: "Segment" },
+      { name: "Segment", providerId: "segment", authType: "api_key", keyLabel: "Write Key", keyHint: "your-segment-write-key" },
     ],
   },
   {
     emoji: "📹", label: "Content & Video", description: "Video and content performance.",
     platforms: [
-      { name: "YouTube" },
+      { name: "YouTube", providerId: "youtube", authType: "api_key", keyLabel: "Channel ID", keyHint: "UCxxxxxxxxxxxxxxxxxxxxxx" },
       { name: "Vimeo" },
       { name: "Wistia" },
       { name: "Loom" },
@@ -243,7 +259,7 @@ const CATEGORIES: Category[] = [
     platforms: [
       { name: "WordPress" },
       { name: "Webflow" },
-      { name: "Shopify CMS" },
+      { name: "Shopify CMS", providerId: "shopify", authType: "oauth" },
       { name: "Contentful" },
       { name: "Sanity" },
       { name: "Ghost" },
@@ -266,21 +282,168 @@ const CATEGORIES: Category[] = [
 
 const TOTAL_PLATFORMS = CATEGORIES.reduce((s, c) => s + c.platforms.length, 0);
 
+// ── API Key Modal ─────────────────────────────────────────────────────────────
+function ApiKeyModal({
+  platform, onClose, onSuccess,
+}: {
+  platform: Platform;
+  onClose: () => void;
+  onSuccess: (providerId: string) => void;
+}) {
+  const [key, setKey] = useState("");
+  const [wcUrl, setWcUrl] = useState("");
+  const [wcSecret, setWcSecret] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const isWoo = platform.authType === "api_key_woocommerce";
+
+  async function save() {
+    if (!platform.providerId) return;
+    setSaving(true);
+    setErr("");
+    try {
+      const body = isWoo
+        ? { provider: platform.providerId, url: wcUrl, key, secret: wcSecret }
+        : { provider: platform.providerId, key };
+      const res = await fetch("/api/connect/api-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Error ${res.status}`);
+      }
+      onSuccess(platform.providerId);
+      onClose();
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl border bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <p className="font-semibold text-sm">Connect {platform.name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Enter your credentials to connect</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          {isWoo && (
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Store URL</label>
+              <input
+                value={wcUrl}
+                onChange={e => setWcUrl(e.target.value)}
+                placeholder="https://mystore.com"
+                className="mt-1 w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50"
+              />
+            </div>
+          )}
+
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                {platform.keyLabel ?? "API Key"}
+              </label>
+              {platform.docsUrl && (
+                <a href={platform.docsUrl} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1 text-[11px] text-primary hover:underline">
+                  <ExternalLink className="h-2.5 w-2.5" />
+                  How to find it
+                </a>
+              )}
+            </div>
+            <input
+              value={key}
+              onChange={e => setKey(e.target.value)}
+              placeholder={platform.keyHint ?? "Paste your key here…"}
+              type="password"
+              className="mt-1 w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50 font-mono"
+            />
+          </div>
+
+          {isWoo && (
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Consumer Secret</label>
+              <input
+                value={wcSecret}
+                onChange={e => setWcSecret(e.target.value)}
+                placeholder="cs_…"
+                type="password"
+                className="mt-1 w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50 font-mono"
+              />
+            </div>
+          )}
+
+          {err && (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</p>
+          )}
+
+          <p className="text-[11px] text-muted-foreground">
+            Your credentials are encrypted and stored securely. We never share them.
+          </p>
+        </div>
+
+        <div className="flex gap-2 border-t px-5 py-4">
+          <button onClick={onClose} className="flex-1 rounded-xl border py-2.5 text-sm font-semibold hover:bg-muted transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={saving || !key || (isWoo && (!wcUrl || !wcSecret))}
+            className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+            {saving ? "Saving…" : "Save & Connect"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Platform card ─────────────────────────────────────────────────────────────
 function PlatformCard({
-  platform, isConnected, isDemo, onDisconnect,
+  platform, isConnected, isDemo, onDisconnect, onConnected,
 }: {
   platform: Platform;
   isConnected: boolean;
   isDemo: boolean;
   onDisconnect: (providerId: string) => void;
+  onConnected: (providerId: string) => void;
 }) {
   const [disconnecting, setDisconnecting] = useState(false);
-  const hasOAuth = platform.providerId && SUPPORTED_PROVIDERS.has(platform.providerId);
+  const [showModal, setShowModal] = useState(false);
+
+  const hasOAuth   = platform.providerId && OAUTH_PROVIDERS.has(platform.providerId);
+  const hasApiKey  = platform.providerId && API_KEY_PROVIDERS.has(platform.providerId);
+  const hasApiKeyWoo = platform.authType === "api_key_woocommerce";
+  const canConnect = hasOAuth || hasApiKey || hasApiKeyWoo;
+
+  // In demo mode show select platforms as connected
+  const DEMO_CONNECTED = new Set([
+    "Google Ads","Meta Ads","Google Analytics 4","Shopify","TikTok Ads",
+    "Facebook Pages","Instagram","Klaviyo","HubSpot CRM","Stripe","YouTube",
+    "Google Search Console",
+  ]);
+  const showConnected = isDemo ? DEMO_CONNECTED.has(platform.name) : isConnected;
 
   async function handleConnect() {
-    if (!hasOAuth || !platform.providerId) return;
-    window.location.href = `/api/connect/${platform.providerId}`;
+    if (hasOAuth && platform.providerId) {
+      window.location.href = `/api/connect/${platform.providerId}`;
+    } else if (hasApiKey || hasApiKeyWoo) {
+      setShowModal(true);
+    }
   }
 
   async function handleDisconnect() {
@@ -290,74 +453,98 @@ function PlatformCard({
     setDisconnecting(false);
   }
 
-  // In demo mode show as connected for the demo platforms
-  const showConnected = isDemo
-    ? ["Google Ads","Meta Ads","Google Analytics 4","Shopify","TikTok Ads","Facebook Pages","Instagram","Klaviyo","HubSpot CRM","Stripe","YouTube"].includes(platform.name)
-    : isConnected;
-
   return (
-    <div className={cn(
-      "rounded-xl border p-3 flex flex-col gap-2 transition-all",
-      showConnected
-        ? "border-emerald-500/25 bg-emerald-500/5"
-        : "border-border bg-card hover:border-primary/30"
-    )}>
-      <div className="flex items-start justify-between gap-1">
-        <p className="text-[12px] font-semibold leading-tight">{platform.name}</p>
-        <div className={cn(
-          "h-2 w-2 rounded-full shrink-0 mt-1",
-          showConnected ? "bg-emerald-500" : "bg-muted-foreground/20"
-        )} />
+    <>
+      <div className={cn(
+        "rounded-xl border p-3 flex flex-col gap-2 transition-all",
+        showConnected
+          ? "border-emerald-500/25 bg-emerald-500/5"
+          : "border-border bg-card hover:border-primary/30"
+      )}>
+        <div className="flex items-start justify-between gap-1">
+          <p className="text-[12px] font-semibold leading-tight">{platform.name}</p>
+          <div className={cn(
+            "h-2 w-2 rounded-full shrink-0 mt-1",
+            showConnected ? "bg-emerald-500" : canConnect ? "bg-muted-foreground/20" : "bg-muted-foreground/10"
+          )} />
+        </div>
+
+        {showConnected && (
+          <span className="text-[10px] font-semibold flex items-center gap-1 text-emerald-500">
+            <CheckCircle2 className="h-2.5 w-2.5" /> Connected
+          </span>
+        )}
+
+        {!showConnected && !canConnect && (
+          <span className="text-[10px] text-muted-foreground/50">Coming soon</span>
+        )}
+
+        {!showConnected && hasApiKey && !hasOAuth && (
+          <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+            <Key className="h-2.5 w-2.5" /> API key
+          </span>
+        )}
+
+        {showConnected && platform.providerId && !isDemo ? (
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-bold bg-muted text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-all flex items-center justify-center gap-1"
+          >
+            {disconnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+            Disconnect
+          </button>
+        ) : !showConnected && canConnect ? (
+          <button
+            onClick={handleConnect}
+            className={cn(
+              "mt-auto w-full rounded-lg py-1.5 text-[11px] font-bold transition-all",
+              hasOAuth
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+            )}
+          >
+            {hasOAuth ? "Connect" : "Enter API Key"}
+          </button>
+        ) : showConnected ? (
+          <div className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-bold bg-emerald-500/10 text-emerald-600 text-center cursor-default">
+            ✓ Connected
+          </div>
+        ) : (
+          <div className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-medium bg-muted/50 text-muted-foreground/40 text-center cursor-default">
+            Coming soon
+          </div>
+        )}
       </div>
 
-      {showConnected && (
-        <span className="text-[10px] font-semibold flex items-center gap-1 text-emerald-500">
-          <CheckCircle2 className="h-2.5 w-2.5" /> Connected
-        </span>
+      {showModal && platform.providerId && (
+        <ApiKeyModal
+          platform={platform}
+          onClose={() => setShowModal(false)}
+          onSuccess={(id) => {
+            onConnected(id);
+            setShowModal(false);
+          }}
+        />
       )}
-
-      {!showConnected && !hasOAuth && (
-        <span className="text-[10px] text-muted-foreground/50">Coming soon</span>
-      )}
-
-      {showConnected && platform.providerId && !isDemo ? (
-        <button
-          onClick={handleDisconnect}
-          disabled={disconnecting}
-          className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-bold bg-muted text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-all flex items-center justify-center gap-1"
-        >
-          {disconnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-          Disconnect
-        </button>
-      ) : !showConnected && hasOAuth ? (
-        <button
-          onClick={handleConnect}
-          className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
-        >
-          Connect
-        </button>
-      ) : showConnected ? (
-        <div className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-bold bg-emerald-500/10 text-emerald-600 text-center cursor-default">
-          ✓ Connected
-        </div>
-      ) : (
-        <div className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-medium bg-muted/50 text-muted-foreground/40 text-center cursor-default">
-          Coming soon
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
 // ── Category accordion row ────────────────────────────────────────────────────
 function CategoryRow({
-  category, open, onToggle, query, connectedProviders, isDemo, onDisconnect,
+  category, open, onToggle, query, connectedProviders, isDemo, onDisconnect, onConnected,
 }: {
   category: Category; open: boolean; onToggle: () => void; query: string;
   connectedProviders: Record<string, boolean>; isDemo: boolean;
   onDisconnect: (providerId: string) => void;
+  onConnected: (providerId: string) => void;
 }) {
-  const DEMO_CONNECTED = new Set(["Google Ads","Meta Ads","Google Analytics 4","Shopify","TikTok Ads","Facebook Pages","Instagram","Klaviyo","HubSpot CRM","Stripe","YouTube"]);
+  const DEMO_CONNECTED = new Set([
+    "Google Ads","Meta Ads","Google Analytics 4","Shopify","TikTok Ads",
+    "Facebook Pages","Instagram","Klaviyo","HubSpot CRM","Stripe","YouTube",
+    "Google Search Console",
+  ]);
 
   const connectedCount = isDemo
     ? category.platforms.filter(p => DEMO_CONNECTED.has(p.name)).length
@@ -399,11 +586,12 @@ function CategoryRow({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
             {filtered.map(p => (
               <PlatformCard
-                key={p.name}
+                key={p.name + (p.providerId ?? "")}
                 platform={p}
                 isConnected={!!(p.providerId && connectedProviders[p.providerId])}
                 isDemo={isDemo}
                 onDisconnect={onDisconnect}
+                onConnected={onConnected}
               />
             ))}
           </div>
@@ -417,10 +605,14 @@ function CategoryRow({
 export default function ConnectPage() {
   const [openCats, setOpenCats] = useState<Set<string>>(new Set(["Advertising", "Website & Analytics"]));
   const [query, setQuery] = useState("");
-  const { connected, source, loading, disconnect } = useIntegrations();
+  const { connected, source, loading, refetch, disconnect } = useIntegrations();
 
   const isDemo = source === "demo";
-  const DEMO_CONNECTED_NAMES = ["Google Ads","Meta Ads","Google Analytics 4","Shopify","TikTok Ads","Facebook Pages","Instagram","Klaviyo","HubSpot CRM","Stripe","YouTube"];
+  const DEMO_CONNECTED_NAMES = [
+    "Google Ads","Meta Ads","Google Analytics 4","Shopify","TikTok Ads",
+    "Facebook Pages","Instagram","Klaviyo","HubSpot CRM","Stripe","YouTube",
+    "Google Search Console",
+  ];
 
   const totalConnected = isDemo
     ? DEMO_CONNECTED_NAMES.length
@@ -436,6 +628,11 @@ export default function ConnectPage() {
       next.has(label) ? next.delete(label) : next.add(label);
       return next;
     });
+  }
+
+  // Called when an API key connect succeeds — optimistically update state
+  function handleConnected(providerId: string) {
+    refetch();
   }
 
   return (
@@ -555,6 +752,7 @@ export default function ConnectPage() {
               connectedProviders={connected}
               isDemo={isDemo}
               onDisconnect={disconnect}
+              onConnected={handleConnected}
             />
           ))}
         </div>

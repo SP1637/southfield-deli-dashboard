@@ -14,16 +14,14 @@ import { getUserByEmail, getAllIntegrations } from "@/lib/supabase";
 import { cookies } from "next/headers";
 
 const ALL_PROVIDERS = [
-  "ga4",
-  "google_ads",
-  "meta_ads",
-  "shopify",
-  "linkedin_ads",
-  "tiktok_ads",
-  "pinterest_ads",
-  "snapchat_ads",
-  "bing_ads",
-  "salesforce",
+  // OAuth providers
+  "ga4", "google_ads", "meta_ads", "shopify", "linkedin_ads",
+  "tiktok_ads", "pinterest_ads", "snapchat_ads", "bing_ads", "salesforce",
+  // API-key providers
+  "klaviyo", "mailchimp", "hubspot", "activecampaign", "woocommerce",
+  "google_search_console", "youtube", "twitter_ads", "reddit_ads",
+  "mixpanel", "amplitude", "segment", "hotjar", "stripe",
+  "bigcommerce", "brevo", "drip", "intercom", "pipedrive", "zoho_crm",
 ];
 
 export async function GET(_req: NextRequest) {
@@ -34,16 +32,14 @@ export async function GET(_req: NextRequest) {
     // Show a realistic set of connected platforms for the demo
     return NextResponse.json({
       connected: {
-        ga4: true,
-        google_ads: true,
-        meta_ads: true,
-        shopify: true,
-        linkedin_ads: false,
-        tiktok_ads: true,
-        pinterest_ads: false,
-        snapchat_ads: false,
-        bing_ads: false,
-        salesforce: false,
+        ga4: true, google_ads: true, meta_ads: true, shopify: true,
+        linkedin_ads: false, tiktok_ads: true, pinterest_ads: false,
+        snapchat_ads: false, bing_ads: false, salesforce: false,
+        klaviyo: true, mailchimp: false, hubspot: false, activecampaign: false,
+        woocommerce: false, google_search_console: true, youtube: true,
+        twitter_ads: false, reddit_ads: false, mixpanel: false, amplitude: false,
+        segment: false, hotjar: false, stripe: true, bigcommerce: false,
+        brevo: false, drip: false, intercom: false, pipedrive: false, zoho_crm: false,
       },
       source: "demo",
     });

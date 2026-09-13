@@ -4,6 +4,7 @@
  */
 
 export type OAuthProviderId =
+  | "ga4"
   | "google_ads"
   | "meta_ads"
   | "shopify"
@@ -33,6 +34,18 @@ export interface OAuthProvider {
 }
 
 export const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProvider> = {
+  ga4: {
+    name: "Google Analytics 4",
+    authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    clientIdEnv: "GOOGLE_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_CLIENT_SECRET",
+    scopes: [
+      "https://www.googleapis.com/auth/analytics.readonly",
+      "https://www.googleapis.com/auth/analytics",
+    ],
+    extraAuthParams: { access_type: "offline", prompt: "consent" },
+  },
   google_ads: {
     name: "Google Ads",
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
