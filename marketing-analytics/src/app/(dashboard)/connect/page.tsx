@@ -724,7 +724,7 @@ export default function ConnectPage() {
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Search 150+ platforms…"
+              placeholder="Search 160+ platforms…"
               className="w-full rounded-xl border bg-card pl-9 pr-4 py-2.5 text-sm outline-none focus:border-primary/50 placeholder:text-muted-foreground/40"
             />
           </div>
