@@ -1,3 +1,4 @@
+// v2 — shopify domain fix
 import { NextRequest, NextResponse } from "next/server";
 import { OAUTH_PROVIDERS, getClientId, type OAuthProviderId } from "@/lib/oauth-providers";
 import { cookies } from "next/headers";
