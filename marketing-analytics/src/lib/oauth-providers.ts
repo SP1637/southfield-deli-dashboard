@@ -67,8 +67,11 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProvider> = {
   },
   shopify: {
     name: "Shopify",
-    authUrl: (extra) =>
-      `https://${extra.shop ?? "YOUR-STORE"}.myshopify.com/admin/oauth/authorize`,
+    authUrl: (extra) => {
+      const shop = extra.shop ?? "YOUR-STORE";
+      const host = shop.includes(".myshopify.com") ? shop : `${shop}.myshopify.com`;
+      return `https://${host}/admin/oauth/authorize`;
+    },
     tokenUrl: "https://shopify.myshopify.com/admin/oauth/access_token",
     clientIdEnv: "SHOPIFY_API_KEY",
     clientSecretEnv: "SHOPIFY_API_SECRET",
