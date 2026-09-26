@@ -281,6 +281,7 @@ const CATEGORIES: Category[] = [
 ];
 
 const TOTAL_PLATFORMS = CATEGORIES.reduce((s, c) => s + c.platforms.length, 0);
+const _CACHE_BUST = "v2"; // shopify domain modal
 
 // ── API Key Modal ─────────────────────────────────────────────────────────────
 function ApiKeyModal({
