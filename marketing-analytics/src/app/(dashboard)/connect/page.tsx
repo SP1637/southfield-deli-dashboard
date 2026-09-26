@@ -424,6 +424,8 @@ function PlatformCard({
 }) {
   const [disconnecting, setDisconnecting] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showShopModal, setShowShopModal] = useState(false);
+  const [shopDomain, setShopDomain] = useState("");
 
   const hasOAuth   = platform.providerId && OAUTH_PROVIDERS.has(platform.providerId);
   const hasApiKey  = platform.providerId && API_KEY_PROVIDERS.has(platform.providerId);
@@ -440,7 +442,11 @@ function PlatformCard({
 
   async function handleConnect() {
     if (hasOAuth && platform.providerId) {
-      window.location.href = `/api/connect/${platform.providerId}`;
+      if (platform.providerId === "shopify") {
+        setShowShopModal(true);
+      } else {
+        window.location.href = `/api/connect/${platform.providerId}`;
+      }
     } else if (hasApiKey || hasApiKeyWoo) {
       setShowModal(true);
     }
@@ -455,6 +461,37 @@ function PlatformCard({
 
   return (
     <>
+      {showShopModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl border bg-card shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h3 className="font-semibold text-sm">Connect Shopify Store</h3>
+              <button onClick={() => setShowShopModal(false)}><X className="h-4 w-4" /></button>
+            </div>
+            <div className="px-5 py-4 flex flex-col gap-3">
+              <label className="text-xs font-medium text-muted-foreground">Your Shopify store domain</label>
+              <div className="flex items-center rounded-xl border bg-background overflow-hidden">
+                <input
+                  value={shopDomain}
+                  onChange={e => setShopDomain(e.target.value.replace(/https?:\/\/|\.myshopify\.com.*/g, ""))}
+                  placeholder="your-store"
+                  className="flex-1 px-3 py-2.5 text-sm outline-none bg-transparent font-mono"
+                />
+                <span className="px-3 text-xs text-muted-foreground border-l py-2.5">.myshopify.com</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Enter just the store name, e.g. <span className="font-mono">my-store</span></p>
+            </div>
+            <div className="flex gap-2 border-t px-5 py-4">
+              <button onClick={() => setShowShopModal(false)} className="flex-1 rounded-xl border py-2.5 text-sm font-semibold hover:bg-muted transition-colors">Cancel</button>
+              <button
+                onClick={() => { if (shopDomain) window.location.href = `/api/connect/shopify?shop=${shopDomain}.myshopify.com`; }}
+                disabled={!shopDomain}
+                className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >Connect</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className={cn(
         "rounded-xl border p-3 flex flex-col gap-2 transition-all",
         showConnected
