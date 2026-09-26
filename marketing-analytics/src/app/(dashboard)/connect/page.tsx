@@ -485,7 +485,7 @@ function PlatformCard({
             <div className="flex gap-2 border-t px-5 py-4">
               <button onClick={() => setShowShopModal(false)} className="flex-1 rounded-xl border py-2.5 text-sm font-semibold hover:bg-muted transition-colors">Cancel</button>
               <button
-                onClick={() => { if (shopDomain) window.location.href = `/api/connect/shopify?shop=${shopDomain}.myshopify.com`; }}
+                onClick={() => { if (shopDomain) { const slug = shopDomain.replace(/https?:\/\/|\.myshopify\.com.*/g, "").trim(); window.location.href = `/api/connect/shopify?shop=${slug}.myshopify.com`; } }}
                 disabled={!shopDomain}
                 className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >Connect</button>
