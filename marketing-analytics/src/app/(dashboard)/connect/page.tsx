@@ -28,10 +28,29 @@ const OAUTH_PROVIDERS = new Set([
   "tiktok_ads", "pinterest_ads", "snapchat_ads", "bing_ads", "salesforce",
 ]);
 const API_KEY_PROVIDERS = new Set([
-  "klaviyo", "mailchimp", "hubspot", "activecampaign", "woocommerce",
-  "google_search_console", "youtube", "twitter_ads", "reddit_ads",
-  "mixpanel", "amplitude", "segment", "hotjar", "stripe",
-  "bigcommerce", "brevo", "drip", "intercom", "pipedrive", "zoho_crm",
+  // Advertising
+  "twitter_ads", "reddit_ads",
+  // Web Analytics
+  "google_search_console", "youtube", "matomo", "plausible",
+  // Search & SEO
+  "semrush", "ahrefs", "moz",
+  // Social Media
+  "twitter_organic",
+  // Email & Lifecycle
+  "klaviyo", "mailchimp", "hubspot", "activecampaign", "brevo", "drip",
+  "omnisend", "convertkit", "mailerlite",
+  // CRM & Leads
+  "pipedrive", "zoho_crm", "intercom", "freshsales",
+  // Ecommerce
+  "woocommerce", "bigcommerce",
+  // Conversion & Behaviour
+  "hotjar", "typeform",
+  // Attribution
+  "segment", "triplewhale",
+  // Reviews & Reputation
+  "trustpilot", "reviewsio", "yotpo",
+  // Legacy
+  "mixpanel", "amplitude", "stripe",
 ]);
 
 // ── Platform data ─────────────────────────────────────────────────────────────
@@ -59,9 +78,9 @@ const CATEGORIES: Category[] = [
     emoji: "🌐", label: "Web Analytics", description: "Traffic, behaviour and conversions.",
     platforms: [
       { name: "Google Analytics 4", providerId: "ga4",       authType: "oauth" },
+      { name: "Matomo",            providerId: "matomo",   authType: "api_key", keyLabel: "Auth Token", keyHint: "your-matomo-token" },
+      { name: "Plausible",          providerId: "plausible",authType: "api_key", keyLabel: "API Key",    keyHint: "your-plausible-api-key" },
       { name: "Adobe Analytics" },
-      { name: "Matomo" },
-      { name: "Plausible" },
       { name: "Microsoft Clarity" },
       { name: "Google Tag Manager" },
     ],
@@ -70,22 +89,22 @@ const CATEGORIES: Category[] = [
     emoji: "🔍", label: "Search & SEO", description: "Organic visibility and search performance.",
     platforms: [
       { name: "Google Search Console", providerId: "google_search_console", authType: "api_key", keyLabel: "Verified Site URL", keyHint: "https://example.com", docsUrl: "https://search.google.com/search-console" },
-      { name: "SEMrush" },
-      { name: "Ahrefs" },
-      { name: "Moz" },
+      { name: "SEMrush",  providerId: "semrush", authType: "api_key", keyLabel: "API Key",    keyHint: "your-semrush-api-key" },
+      { name: "Ahrefs",   providerId: "ahrefs",  authType: "api_key", keyLabel: "API Token",  keyHint: "your-ahrefs-token" },
+      { name: "Moz",      providerId: "moz",     authType: "api_key", keyLabel: "API Key",    keyHint: "your-moz-api-key" },
       { name: "BrightEdge" },
     ],
   },
   {
     emoji: "📱", label: "Social Media", description: "Organic social reach and content performance.",
     platforms: [
+      { name: "YouTube",        providerId: "youtube",          authType: "api_key", keyLabel: "Channel ID",    keyHint: "UCxxxxxxxxxxxxxxxxxxxxxx", docsUrl: "https://support.google.com/youtube/answer/3250431" },
+      { name: "X (Twitter)",   providerId: "twitter_organic",  authType: "api_key", keyLabel: "Bearer Token",  keyHint: "AAAA…" },
       { name: "Instagram" },
       { name: "Facebook Pages" },
       { name: "LinkedIn" },
       { name: "TikTok" },
-      { name: "YouTube",  providerId: "youtube", authType: "api_key", keyLabel: "Channel ID", keyHint: "UCxxxxxxxxxxxxxxxxxxxxxx", docsUrl: "https://support.google.com/youtube/answer/3250431" },
       { name: "Pinterest" },
-      { name: "X (Twitter)" },
     ],
   },
   {
@@ -96,9 +115,9 @@ const CATEGORIES: Category[] = [
       { name: "Brevo",          providerId: "brevo",          authType: "api_key", keyLabel: "API Key", keyHint: "xkeysib-…" },
       { name: "ActiveCampaign", providerId: "activecampaign", authType: "api_key", keyLabel: "API Key", keyHint: "your-activecampaign-key" },
       { name: "HubSpot",        providerId: "hubspot",        authType: "api_key", keyLabel: "Private App Token", keyHint: "pat-na1-…", docsUrl: "https://developers.hubspot.com/docs/api/private-apps" },
-      { name: "Omnisend" },
-      { name: "ConvertKit" },
-      { name: "MailerLite" },
+      { name: "Omnisend",   providerId: "omnisend",   authType: "api_key", keyLabel: "API Key",    keyHint: "your-omnisend-api-key" },
+      { name: "ConvertKit", providerId: "convertkit", authType: "api_key", keyLabel: "API Secret", keyHint: "your-convertkit-secret" },
+      { name: "MailerLite", providerId: "mailerlite", authType: "api_key", keyLabel: "API Key",    keyHint: "your-mailerlite-key" },
     ],
   },
   {
@@ -108,7 +127,7 @@ const CATEGORIES: Category[] = [
       { name: "Salesforce", providerId: "salesforce",authType: "oauth" },
       { name: "Zoho CRM",   providerId: "zoho_crm",  authType: "api_key", keyLabel: "API Key", keyHint: "your-zoho-api-key" },
       { name: "Pipedrive",  providerId: "pipedrive", authType: "api_key", keyLabel: "API Token", keyHint: "your-pipedrive-token", docsUrl: "https://pipedrive.readme.io/docs/how-to-find-the-api-token" },
-      { name: "Freshsales" },
+      { name: "Freshsales", providerId: "freshsales", authType: "api_key", keyLabel: "API Key", keyHint: "your-freshsales-api-key" },
     ],
   },
   {
@@ -124,8 +143,8 @@ const CATEGORIES: Category[] = [
     emoji: "🖱️", label: "Conversion & Behaviour", description: "CRO, heatmaps and customer behaviour.",
     platforms: [
       { name: "Hotjar",     providerId: "hotjar",   authType: "api_key", keyLabel: "API Key", keyHint: "hjk_…", docsUrl: "https://help.hotjar.com/hc/en-us/articles/115009336727" },
+      { name: "Typeform",         providerId: "typeform", authType: "api_key", keyLabel: "Personal Access Token", keyHint: "tfp_…" },
       { name: "Microsoft Clarity" },
-      { name: "Typeform" },
       { name: "Unbounce" },
       { name: "Leadpages" },
     ],
@@ -134,7 +153,7 @@ const CATEGORIES: Category[] = [
     emoji: "🎯", label: "Attribution", description: "Cross-channel measurement and attribution.",
     platforms: [
       { name: "Segment",     providerId: "segment", authType: "api_key", keyLabel: "Write Key", keyHint: "your-segment-write-key" },
-      { name: "Triple Whale" },
+      { name: "Triple Whale", providerId: "triplewhale", authType: "api_key", keyLabel: "API Key", keyHint: "your-triplewhale-api-key" },
       { name: "Northbeam" },
       { name: "Rockerbox" },
       { name: "Hyros" },
@@ -143,10 +162,10 @@ const CATEGORIES: Category[] = [
   {
     emoji: "⭐", label: "Reviews & Reputation", description: "Brand/reputation signals.",
     platforms: [
+      { name: "Trustpilot",           providerId: "trustpilot", authType: "api_key", keyLabel: "API Key",  keyHint: "your-trustpilot-api-key" },
+      { name: "Reviews.io",           providerId: "reviewsio",  authType: "api_key", keyLabel: "Store ID", keyHint: "your-store-id" },
+      { name: "Yotpo",                providerId: "yotpo",      authType: "api_key", keyLabel: "App Key",  keyHint: "your-yotpo-app-key" },
       { name: "Google Business Profile" },
-      { name: "Trustpilot" },
-      { name: "Reviews.io" },
-      { name: "Yotpo" },
     ],
   },
   {
