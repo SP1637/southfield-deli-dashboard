@@ -35,12 +35,16 @@ const API_KEY_PROVIDERS = new Set([
   // Search & SEO
   "semrush", "ahrefs", "moz",
   // Social Media
-  "twitter_organic",
+  // Web Analytics
+  "matomo", "plausible",
+  // Search & SEO
+  "google_search_console", "semrush", "ahrefs", "moz",
+  // Social Media
+  "youtube",
   // Email & Lifecycle
-  "klaviyo", "mailchimp", "hubspot", "activecampaign", "brevo", "drip",
-  "omnisend", "convertkit", "mailerlite",
+  "klaviyo", "mailchimp", "hubspot", "activecampaign", "brevo",
   // CRM & Leads
-  "pipedrive", "zoho_crm", "intercom", "freshsales",
+  "pipedrive", "zoho_crm",
   // Ecommerce
   "woocommerce", "bigcommerce",
   // Conversion & Behaviour
@@ -48,9 +52,7 @@ const API_KEY_PROVIDERS = new Set([
   // Attribution
   "segment", "triplewhale",
   // Reviews & Reputation
-  "trustpilot", "reviewsio", "yotpo",
-  // Legacy
-  "mixpanel", "amplitude", "stripe",
+  "trustpilot", "reviewsio",
 ]);
 
 // ── Platform data ─────────────────────────────────────────────────────────────
@@ -65,13 +67,6 @@ const CATEGORIES: Category[] = [
       { name: "LinkedIn Ads",  providerId: "linkedin_ads", authType: "oauth" },
       { name: "Microsoft Ads", providerId: "bing_ads",     authType: "oauth" },
       { name: "Pinterest Ads", providerId: "pinterest_ads",authType: "oauth" },
-      { name: "X Ads",         providerId: "twitter_ads",  authType: "api_key", keyLabel: "Bearer Token", keyHint: "AAAA…", docsUrl: "https://developer.twitter.com/en/docs/authentication/oauth-2-0/bearer-tokens" },
-      { name: "Amazon Ads" },
-      { name: "DV360" },
-      { name: "The Trade Desk" },
-      { name: "Criteo" },
-      { name: "Taboola" },
-      { name: "Outbrain" },
     ],
   },
   {
@@ -92,14 +87,12 @@ const CATEGORIES: Category[] = [
       { name: "SEMrush",  providerId: "semrush", authType: "api_key", keyLabel: "API Key",    keyHint: "your-semrush-api-key" },
       { name: "Ahrefs",   providerId: "ahrefs",  authType: "api_key", keyLabel: "API Token",  keyHint: "your-ahrefs-token" },
       { name: "Moz",      providerId: "moz",     authType: "api_key", keyLabel: "API Key",    keyHint: "your-moz-api-key" },
-      { name: "BrightEdge" },
     ],
   },
   {
     emoji: "📱", label: "Social Media", description: "Organic social reach and content performance.",
     platforms: [
       { name: "YouTube",        providerId: "youtube",          authType: "api_key", keyLabel: "Channel ID",    keyHint: "UCxxxxxxxxxxxxxxxxxxxxxx", docsUrl: "https://support.google.com/youtube/answer/3250431" },
-      { name: "X (Twitter)",   providerId: "twitter_organic",  authType: "api_key", keyLabel: "Bearer Token",  keyHint: "AAAA…" },
       { name: "Instagram" },
       { name: "Facebook Pages" },
       { name: "LinkedIn" },
@@ -115,9 +108,6 @@ const CATEGORIES: Category[] = [
       { name: "Brevo",          providerId: "brevo",          authType: "api_key", keyLabel: "API Key", keyHint: "xkeysib-…" },
       { name: "ActiveCampaign", providerId: "activecampaign", authType: "api_key", keyLabel: "API Key", keyHint: "your-activecampaign-key" },
       { name: "HubSpot",        providerId: "hubspot",        authType: "api_key", keyLabel: "Private App Token", keyHint: "pat-na1-…", docsUrl: "https://developers.hubspot.com/docs/api/private-apps" },
-      { name: "Omnisend",   providerId: "omnisend",   authType: "api_key", keyLabel: "API Key",    keyHint: "your-omnisend-api-key" },
-      { name: "ConvertKit", providerId: "convertkit", authType: "api_key", keyLabel: "API Secret", keyHint: "your-convertkit-secret" },
-      { name: "MailerLite", providerId: "mailerlite", authType: "api_key", keyLabel: "API Key",    keyHint: "your-mailerlite-key" },
     ],
   },
   {
@@ -127,7 +117,6 @@ const CATEGORIES: Category[] = [
       { name: "Salesforce", providerId: "salesforce",authType: "oauth" },
       { name: "Zoho CRM",   providerId: "zoho_crm",  authType: "api_key", keyLabel: "API Key", keyHint: "your-zoho-api-key" },
       { name: "Pipedrive",  providerId: "pipedrive", authType: "api_key", keyLabel: "API Token", keyHint: "your-pipedrive-token", docsUrl: "https://pipedrive.readme.io/docs/how-to-find-the-api-token" },
-      { name: "Freshsales", providerId: "freshsales", authType: "api_key", keyLabel: "API Key", keyHint: "your-freshsales-api-key" },
     ],
   },
   {
@@ -146,7 +135,6 @@ const CATEGORIES: Category[] = [
       { name: "Typeform",         providerId: "typeform", authType: "api_key", keyLabel: "Personal Access Token", keyHint: "tfp_…" },
       { name: "Microsoft Clarity" },
       { name: "Unbounce" },
-      { name: "Leadpages" },
     ],
   },
   {
@@ -156,7 +144,6 @@ const CATEGORIES: Category[] = [
       { name: "Triple Whale", providerId: "triplewhale", authType: "api_key", keyLabel: "API Key", keyHint: "your-triplewhale-api-key" },
       { name: "Northbeam" },
       { name: "Rockerbox" },
-      { name: "Hyros" },
     ],
   },
   {
@@ -164,7 +151,6 @@ const CATEGORIES: Category[] = [
     platforms: [
       { name: "Trustpilot",           providerId: "trustpilot", authType: "api_key", keyLabel: "API Key",  keyHint: "your-trustpilot-api-key" },
       { name: "Reviews.io",           providerId: "reviewsio",  authType: "api_key", keyLabel: "Store ID", keyHint: "your-store-id" },
-      { name: "Yotpo",                providerId: "yotpo",      authType: "api_key", keyLabel: "App Key",  keyHint: "your-yotpo-app-key" },
       { name: "Google Business Profile" },
     ],
   },
