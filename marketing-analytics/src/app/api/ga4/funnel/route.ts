@@ -84,27 +84,32 @@ export async function GET(req: NextRequest) {
 
   const FUNNEL_LABELS = ["Page Views", "Adds to Cart", "Checkouts", "Payment Info", "Purchases"];
 
+  const prevStartDate = startDate === "30daysAgo" ? "60daysAgo" : "60daysAgo";
+  const prevEndDate   = startDate === "30daysAgo" ? "31daysAgo" : "31daysAgo";
+
+  const kpiMetrics = [
+    { name: "totalUsers" },
+    { name: "transactions" },
+    { name: "totalPurchasers" },
+    { name: "newUsers" },
+    { name: "purchaseRevenue" },
+  ];
+
   try {
     // Run all queries in parallel for performance
-    const [kpiRes, ...funnelEventResults] = await Promise.all([
-      // ── KPI summary (current + comparison period) ────────────────────────
+    const [kpiCurrentRes, kpiPrevRes, ...funnelEventResults] = await Promise.all([
+      // ── KPI current period ───────────────────────────────────────────────
       client.runReport({
         property,
-        dateRanges: [
-          { startDate, endDate },
-          {
-            startDate: startDate === "30daysAgo" ? "60daysAgo" : `${startDate}+30d`,
-            endDate: startDate === "30daysAgo" ? "31daysAgo" : startDate,
-          },
-        ],
-        dimensions: [{ name: "dateRange" }],
-        metrics: [
-          { name: "totalUsers" },
-          { name: "transactions" },
-          { name: "totalPurchasers" },
-          { name: "newUsers" },
-          { name: "purchaseRevenue" },
-        ],
+        dateRanges: [{ startDate, endDate }],
+        metrics: kpiMetrics,
+        ...(sessionFilter ? { dimensionFilter: sessionFilter } : {}),
+      } as any),
+      // ── KPI previous period (for deltas) ────────────────────────────────
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: prevStartDate, endDate: prevEndDate }],
+        metrics: kpiMetrics,
         ...(sessionFilter ? { dimensionFilter: sessionFilter } : {}),
       } as any),
 
@@ -152,9 +157,8 @@ export async function GET(req: NextRequest) {
     ]);
 
     // ── Extract KPIs ────────────────────────────────────────────────────────
-    const kpiRows = (kpiRes as any)[0]?.rows ?? [];
-    const kpiCurrent = kpiRows.find((r: any) => r.dimensionValues?.[0]?.value === "date_range_0")?.metricValues ?? kpiRows[0]?.metricValues ?? [];
-    const kpiPrev = kpiRows.find((r: any) => r.dimensionValues?.[0]?.value === "date_range_1")?.metricValues ?? kpiRows[1]?.metricValues ?? kpiCurrent;
+    const kpiCurrent = (kpiCurrentRes as any)[0]?.rows?.[0]?.metricValues ?? [];
+    const kpiPrev    = (kpiPrevRes    as any)[0]?.rows?.[0]?.metricValues ?? kpiCurrent;
 
     const delta = (cur: any, prev: any) => {
       const c = parseFloat(cur?.value ?? "0");
