@@ -59,9 +59,13 @@ providers.push(
 
       // --- Demo / dev mode: accept any email + password of 6+ chars ---
       if (credentials.password.length >= 6) {
+        const displayName =
+          credentials.name && credentials.name !== "undefined" && credentials.name.trim()
+            ? credentials.name.trim()
+            : credentials.email.split("@")[0];
         return {
           id: credentials.email,
-          name: credentials.name || credentials.email.split("@")[0],
+          name: displayName,
           email: credentials.email,
           image: null,
         };
