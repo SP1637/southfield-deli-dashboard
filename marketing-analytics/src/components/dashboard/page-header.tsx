@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils";
 import React from "react";
 import { BarChart3, ArrowRight } from "lucide-react";
-import { useDemoMode } from "./demo-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface PageTab {
@@ -131,16 +130,6 @@ export function PageContent({
   className?: string;
   publicPage?: boolean;
 }) {
-  const { isDemo } = useDemoMode();
-
-  if (!publicPage && !isDemo) {
-    return (
-      <div className={cn("p-6", className)}>
-        <RealUserEmptyState />
-      </div>
-    );
-  }
-
   return (
     <div className={cn("p-6 space-y-5", className)}>
       {children}
