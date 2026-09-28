@@ -354,7 +354,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             )}
             <div className="flex-1 min-w-0">
               <p className="truncate text-[13px] font-medium" style={{ color: "hsl(var(--sidebar-foreground))" }}>
-                {session.user.name}
+                {session.user.name ?? session.user.email?.split("@")[0] ?? "User"}
               </p>
               <p className="truncate text-[11px]" style={{ color: "hsl(var(--sidebar-muted))" }}>
                 {session.user.email}
