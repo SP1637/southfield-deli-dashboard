@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronRight, CheckCircle2,
-  Search, Plug, Wifi, Zap, Loader2, X, Key, ExternalLink,
+  Search, Plug, Wifi, Zap, Loader2, X, Key, ExternalLink, Copy, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
@@ -168,6 +168,215 @@ const CATEGORIES: Category[] = [
 const TOTAL_PLATFORMS = CATEGORIES.reduce((s, c) => s + c.platforms.length, 0);
 const _CACHE_BUST = "v2"; // shopify domain modal
 
+// ── GA4 Service Account Setup Modal ──────────────────────────────────────────
+function GA4SetupModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [saEmail, setSaEmail] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+  const [propertyId, setPropertyId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  useEffect(() => {
+    fetch("/api/ga4/service-account-email")
+      .then((r) => r.json())
+      .then((d) => setSaEmail(d.email ?? ""))
+      .catch(() => {});
+    const saved = localStorage.getItem("ga4_selected_property") ?? "";
+    if (saved) setPropertyId(saved);
+  }, []);
+
+  async function copyEmail() {
+    try { await navigator.clipboard.writeText(saEmail); } catch { /* ignore */ }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function save() {
+    if (!propertyId.trim()) return;
+    setSaving(true);
+    localStorage.setItem("ga4_selected_property", propertyId.trim());
+    window.dispatchEvent(new StorageEvent("storage", { key: "ga4_selected_property", newValue: propertyId.trim() }));
+    // Mark as connected server-side
+    try {
+      await fetch("/api/connect/api-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: "ga4", key: propertyId.trim() }),
+      });
+    } catch { /* cookie fallback is fine */ }
+    setSaving(false);
+    onSuccess();
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg rounded-2xl border bg-card shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <p className="font-semibold text-sm">Connect Google Analytics 4</p>
+            <p className="text-xs text-muted-foreground mt-0.5">3-step service account setup — no OAuth needed</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Steps nav */}
+        <div className="flex border-b">
+          {([1, 2, 3] as const).map((n) => (
+            <button
+              key={n}
+              onClick={() => setStep(n)}
+              className={cn(
+                "flex-1 py-2.5 text-[11px] font-semibold transition-colors border-b-2",
+                step === n
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Step {n}
+            </button>
+          ))}
+        </div>
+
+        <div className="px-5 py-5 space-y-4 min-h-[220px]">
+          {step === 1 && (
+            <>
+              <p className="text-sm font-medium">Copy the Nexoryx service account email</p>
+              <p className="text-xs text-muted-foreground">
+                This is the Google account that will read your GA4 data on behalf of this dashboard.
+              </p>
+              {saEmail ? (
+                <div className="flex items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2.5">
+                  <code className="flex-1 text-xs font-mono text-foreground truncate">{saEmail}</code>
+                  <button
+                    onClick={copyEmail}
+                    className="shrink-0 rounded-lg p-1.5 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    title="Copy email"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+                </div>
+              )}
+              {!saEmail && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  <strong>Service account not configured yet.</strong> The Nexoryx admin needs to set{" "}
+                  <code className="font-mono">GOOGLE_SERVICE_ACCOUNT_JSON</code> in Vercel environment variables.
+                </div>
+              )}
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <p className="text-sm font-medium">Add the service account to your GA4 property</p>
+              <ol className="space-y-2 text-xs text-muted-foreground list-none">
+                {[
+                  "Open Google Analytics → Admin (bottom-left gear icon)",
+                  "Under your property column, click Property Access Management",
+                  'Click the blue "+" button → Add users',
+                  "Paste the service account email (from Step 1)",
+                  'Set role to Viewer and click Add',
+                ].map((s, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary">
+                      {i + 1}
+                    </span>
+                    {s}
+                  </li>
+                ))}
+              </ol>
+              <a
+                href="https://analytics.google.com/analytics/web/"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Open Google Analytics
+              </a>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <p className="text-sm font-medium">Enter your GA4 Property ID</p>
+              <p className="text-xs text-muted-foreground">
+                Find it in GA4 → Admin → Property Settings. It looks like{" "}
+                <code className="font-mono text-foreground">123456789</code>.
+              </p>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                  Property ID
+                </label>
+                <input
+                  value={propertyId}
+                  onChange={(e) => setPropertyId(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="123456789"
+                  className="mt-1 w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50 font-mono"
+                />
+              </div>
+              <a
+                href="https://analytics.google.com/analytics/web/#/a/p"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+              >
+                <ExternalLink className="h-3 w-3" />
+                How to find your Property ID
+              </a>
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-2 border-t px-5 py-4">
+          {step > 1 && (
+            <button
+              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+              className="rounded-xl border px-4 py-2.5 text-sm font-semibold hover:bg-muted transition-colors"
+            >
+              Back
+            </button>
+          )}
+          <button onClick={onClose} className="rounded-xl border px-4 py-2.5 text-sm font-semibold hover:bg-muted transition-colors">
+            Cancel
+          </button>
+          <div className="flex-1" />
+          {step < 3 ? (
+            <button
+              onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
+              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Next →
+            </button>
+          ) : (
+            <button
+              onClick={save}
+              disabled={saving || !propertyId.trim()}
+              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              {saving ? "Saving…" : "Save & Connect"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── API Key Modal ─────────────────────────────────────────────────────────────
 function ApiKeyModal({
   platform, onClose, onSuccess,
@@ -311,12 +520,25 @@ function PlatformCard({
   const [disconnecting, setDisconnecting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showShopModal, setShowShopModal] = useState(false);
+  const [showGA4Modal, setShowGA4Modal] = useState(false);
   const [shopDomain, setShopDomain] = useState("");
+  const [ga4Connected, setGa4Connected] = useState(false);
 
-  const hasOAuth   = platform.providerId && OAUTH_PROVIDERS.has(platform.providerId);
+  const isGA4 = platform.providerId === "ga4";
+
+  useEffect(() => {
+    if (isGA4) {
+      try {
+        const saved = localStorage.getItem("ga4_selected_property");
+        setGa4Connected(!!saved && saved !== "oauth-connected");
+      } catch { /* ignore */ }
+    }
+  }, [isGA4]);
+
+  const hasOAuth   = platform.providerId && OAUTH_PROVIDERS.has(platform.providerId) && !isGA4;
   const hasApiKey  = platform.providerId && API_KEY_PROVIDERS.has(platform.providerId);
   const hasApiKeyWoo = platform.authType === "api_key_woocommerce";
-  const canConnect = hasOAuth || hasApiKey || hasApiKeyWoo;
+  const canConnect = hasOAuth || hasApiKey || hasApiKeyWoo || isGA4;
 
   // In demo mode show select platforms as connected
   const DEMO_CONNECTED = new Set([
@@ -324,10 +546,14 @@ function PlatformCard({
     "Facebook Pages","Instagram","Klaviyo","HubSpot CRM","Stripe","YouTube",
     "Google Search Console",
   ]);
-  const showConnected = isDemo ? DEMO_CONNECTED.has(platform.name) : isConnected;
+  const showConnected = isDemo
+    ? DEMO_CONNECTED.has(platform.name)
+    : isGA4 ? ga4Connected : isConnected;
 
   async function handleConnect() {
-    if (hasOAuth && platform.providerId) {
+    if (isGA4) {
+      setShowGA4Modal(true);
+    } else if (hasOAuth && platform.providerId) {
       if (platform.providerId === "shopify") {
         setShowShopModal(true);
       } else {
@@ -427,7 +653,7 @@ function PlatformCard({
                 : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
             )}
           >
-            {hasOAuth ? "Connect" : "Enter API Key"}
+            {isGA4 ? "Setup" : hasOAuth ? "Connect" : "Enter API Key"}
           </button>
         ) : showConnected ? (
           <div className="mt-auto w-full rounded-lg py-1.5 text-[11px] font-bold bg-emerald-500/10 text-emerald-600 text-center cursor-default">
@@ -447,6 +673,16 @@ function PlatformCard({
           onSuccess={(id) => {
             onConnected(id);
             setShowModal(false);
+          }}
+        />
+      )}
+
+      {showGA4Modal && (
+        <GA4SetupModal
+          onClose={() => setShowGA4Modal(false)}
+          onSuccess={() => {
+            setGa4Connected(true);
+            onConnected("ga4");
           }}
         />
       )}
