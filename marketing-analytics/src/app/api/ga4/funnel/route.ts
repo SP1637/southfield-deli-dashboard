@@ -48,7 +48,6 @@ export async function GET(req: NextRequest) {
   }
 
   const property = `properties/${propertyId}`;
-  const client = buildGA4Client();
   const dateRanges = [{ startDate, endDate }];
 
   // Build optional session-level filters
@@ -96,6 +95,8 @@ export async function GET(req: NextRequest) {
   ];
 
   try {
+    const client = buildGA4Client();
+
     // Run all queries in parallel for performance
     const [kpiCurrentRes, kpiPrevRes, ...funnelEventResults] = await Promise.all([
       // ── KPI current period ───────────────────────────────────────────────
