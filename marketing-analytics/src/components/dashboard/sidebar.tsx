@@ -204,7 +204,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     window.location.href = "/login";
   }
 
-  const homeActive = pathname === "/home";
+  const overviewActive = pathname === "/overview" || pathname === "/";
 
   // Auto-open the section that contains the active route
   function isSectionActive(section: NavSection) {
@@ -257,17 +257,17 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto py-2 px-1">
         {/* Overview */}
         <Link
-          href="/home"
+          href="/overview"
           onClick={onClose}
           className={cn(
             "flex items-center gap-2.5 rounded-md mx-1 px-2.5 py-[7px] text-[13px] font-semibold transition-colors",
-            homeActive
+            overviewActive
               ? "bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-accent-foreground))]"
               : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-accent))/50] hover:text-[hsl(var(--sidebar-accent-foreground))]"
           )}
         >
           <Home className={cn("h-[14px] w-[14px] shrink-0",
-            homeActive ? "text-[hsl(var(--sidebar-accent-foreground))]" : "text-[hsl(var(--sidebar-muted))]"
+            overviewActive ? "text-[hsl(var(--sidebar-accent-foreground))]" : "text-[hsl(var(--sidebar-muted))]"
           )} />
           Overview
         </Link>
