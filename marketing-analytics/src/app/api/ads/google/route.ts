@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   // Try OAuth token from cookie first, fall back to service account
   const oauthToken = await readToken("google_ads");
 
-  if ((!saJson && !oauthToken) || !devToken || !customerId) {
+  if ((!saJson && !oauthToken) || !customerId) {
     return NextResponse.json({ demo: true, data: getDemoData(), platform: "google_ads" });
   }
 
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          "developer-token": devToken,
+          ...(devToken ? { "developer-token": devToken } : {}),
           "Content-Type": "application/json",
           ...(process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID
             ? { "login-customer-id": process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID }
