@@ -24,7 +24,7 @@ interface Category { emoji: string; label: string; description: string; platform
 
 // ── Provider sets ─────────────────────────────────────────────────────────────
 const OAUTH_PROVIDERS = new Set([
-  "ga4", "google_ads", "meta_ads", "shopify", "linkedin_ads",
+  "ga4", "google_ads", "meta_ads", "meta_organic", "shopify", "linkedin_ads",
   "tiktok_ads", "pinterest_ads", "snapchat_ads", "bing_ads", "salesforce",
 ]);
 const API_KEY_PROVIDERS = new Set([
@@ -93,8 +93,8 @@ const CATEGORIES: Category[] = [
     emoji: "📱", label: "Social Media", description: "Organic social reach and content performance.",
     platforms: [
       { name: "YouTube",        providerId: "youtube",          authType: "api_key", keyLabel: "Channel ID",    keyHint: "UCxxxxxxxxxxxxxxxxxxxxxx", docsUrl: "https://support.google.com/youtube/answer/3250431" },
-      { name: "Instagram" },
-      { name: "Facebook Pages" },
+      { name: "Instagram",      providerId: "meta_organic", authType: "oauth" },
+      { name: "Facebook Pages", providerId: "meta_organic", authType: "oauth" },
       { name: "LinkedIn" },
       { name: "TikTok" },
       { name: "Pinterest" },
