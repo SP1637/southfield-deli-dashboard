@@ -7,7 +7,6 @@ export type OAuthProviderId =
   | "ga4"
   | "google_ads"
   | "meta_ads"
-  | "meta_organic"
   | "shopify"
   | "linkedin_ads"
   | "tiktok_ads"
@@ -65,17 +64,6 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProvider> = {
     clientIdEnv: "META_APP_ID",
     clientSecretEnv: "META_APP_SECRET",
     scopes: ["ads_read", "business_management", "ads_management"],
-  },
-  meta_organic: {
-    name: "Meta Organic",
-    authUrl: "https://www.facebook.com/v19.0/dialog/oauth",
-    tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
-    clientIdEnv: "META_APP_ID",
-    clientSecretEnv: "META_ORGANIC_APP_SECRET",
-    scopes: ["pages_show_list", "pages_read_engagement", "pages_read_user_content", "instagram_basic", "instagram_manage_insights"],
-    extraAuthParams: {
-      ...(process.env.META_ORGANIC_CONFIG_ID ? { config_id: process.env.META_ORGANIC_CONFIG_ID } : {}),
-    },
   },
   shopify: {
     name: "Shopify",
